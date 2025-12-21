@@ -37,6 +37,6 @@ node_modules/
 # Vitest
 __screenshots__/
 
-/.editorconfig
-/.env.d.ts
-/tsconfig.node.json
+.editorconfig
+.env.d.ts
+tsconfig.node.json
