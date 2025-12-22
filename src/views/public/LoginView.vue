@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBarView />
+
 
     <div class="login-view">
       <!-- Contenedor del formulario de login -->
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import NavBarView from '@/ComponentesReutilizables/NavBarView.vue'
+
 import { ref } from 'vue'
 
 // Estado para el formulario

@@ -91,11 +91,11 @@
 </template>
 
 <script setup lang="ts">
-import NavBarView from '@/ComponentesReutilizables/NavBarView.vue'
+
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
-import { supabase } from '@/lib/supabaseClient'
+
 
 const router = useRouter()
 
