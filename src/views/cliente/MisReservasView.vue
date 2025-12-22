@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBarLogueadoView />
+
 
     <div class="mis-reservas-view">
       <!-- Contenido de Mis Reservas -->
@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import NavBarLogueadoView from '@/ComponentesReutilizables/NavBarLogueadoView.vue'
+
 import { ref } from 'vue'
 
 interface Reserva {

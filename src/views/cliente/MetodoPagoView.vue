@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBarLogueadoView />
+
 
     <div class="metodo-pago-view">
       <div class="container">
@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import NavBarLogueadoView from '@/ComponentesReutilizables/NavBarLogueadoView.vue'
+
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 

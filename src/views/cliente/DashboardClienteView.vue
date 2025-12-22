@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBarLogueadoView />
+
   
     <div class="dashboard-cliente-view">
       <div class="container">
@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import NavBarLogueadoView from '@/ComponentesReutilizables/NavBarLogueadoView.vue'
+
 </script>
 
 <style scoped>

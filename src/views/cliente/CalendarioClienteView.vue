@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- NAVBAR -->
-    <NavBarLogueadoView />
+
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="calendario-cliente-view">
@@ -112,9 +112,9 @@
 </template>
 
 <script setup lang="ts">
-import NavBarLogueadoView from '@/ComponentesReutilizables/NavBarLogueadoView.vue'
+
 import { useRouter } from 'vue-router'
-import { useCalendarCliente } from '@/ComponentesReutilizables/useCalendarCliente'
+
 
 // ============================================
 // ROUTER
