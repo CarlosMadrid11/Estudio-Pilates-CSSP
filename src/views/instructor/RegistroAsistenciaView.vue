@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBarInstructorView />
+
 
     <div class="registro-asistencia-view">
       <!-- Contenido de Registro de Asistencia -->
@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import NavBarInstructorView from '@/ComponentesReutilizables/NavBarInstructorView.vue'
+
 import { ref } from 'vue'
 
 interface Cliente {

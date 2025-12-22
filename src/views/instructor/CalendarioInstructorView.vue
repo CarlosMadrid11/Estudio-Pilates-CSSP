@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBarInstructorView />
+
 
     <div class="calendario-instructor-view">
       <div class="container">
@@ -125,8 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import NavBarInstructorView from '@/ComponentesReutilizables/NavBarInstructorView.vue'
-import { useCalendar } from '@/ComponentesReutilizables/useCalendar'
+
 
 // ============================================
 // USAR EL COMPOSABLE
