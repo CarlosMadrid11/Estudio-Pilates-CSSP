@@ -24,6 +24,7 @@
             class="input-field" 
             :class="{ 'error': errors.telefono }"
             placeholder="Ej: 6671234567"
+            maxlength="15"
             @blur="validateField('telefono')"
           >
           <p v-if="errors.telefono" class="error-message">{{ errors.telefono }}</p>
@@ -94,44 +95,84 @@ import NavBarView from '@/ComponentesReutilizables/NavBarView.vue'
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
-import { supabase } from '@/lib/supabaseClient' // Asegúrate de tener tu cliente de Supabase configurado
+import { supabase } from '@/lib/supabaseClient'
 
 const router = useRouter()
 
-// Schema de validación con Zod
+// Schema de validación mejorado con Zod
 const registroSchema = z.object({
   nombreCompleto: z.string()
     .min(3, 'El nombre debe tener al menos 3 caracteres')
     .max(100, 'El nombre no puede exceder 100 caracteres')
-    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, 'El nombre solo puede contener letras y espacios'),
+    .regex(
+      /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, 
+      'El nombre solo puede contener letras y espacios (sin caracteres especiales)'
+    )
+    .refine(
+      (val) => val.trim().length >= 3,
+      'El nombre no puede ser solo espacios'
+    ),
   
   telefono: z.string()
-    .min(10, 'El teléfono debe tener 10 dígitos')
-    .max(10, 'El teléfono debe tener 10 dígitos')
-    .regex(/^\d+$/, 'El teléfono solo debe contener números'),
+    .min(10, 'El teléfono debe tener al menos 10 dígitos')
+    .max(15, 'El teléfono no puede exceder 15 dígitos')
+    .regex(/^\d+$/, 'El teléfono solo debe contener números')
+    .refine(
+      (val) => !val.startsWith('0'),
+      'El teléfono no puede comenzar con 0'
+    ),
   
   email: z.string()
-    .email('Correo electrónico inválido')
     .min(5, 'El correo es demasiado corto')
-    .max(100, 'El correo es demasiado largo'),
+    .max(100, 'El correo es demasiado largo')
+    .email('Correo electrónico inválido (debe contener @ y un dominio válido)')
+    .regex(
+      /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+      'Formato de correo inválido'
+    )
+    .refine(
+      (val) => !val.includes('..'),
+      'El correo no puede contener puntos consecutivos'
+    )
+    .toLowerCase()
+    .transform((val) => val.trim()),
   
   usuario: z.string()
     .min(4, 'El usuario debe tener al menos 4 caracteres')
     .max(30, 'El usuario no puede exceder 30 caracteres')
-    .regex(/^[a-zA-Z0-9_]+$/, 'El usuario solo puede contener letras, números y guiones bajos'),
+    .regex(
+      /^[a-zA-Z0-9_]+$/, 
+      'El usuario solo puede contener letras, números y guiones bajos'
+    )
+    .refine(
+      (val) => !/^\d+$/.test(val),
+      'El usuario no puede ser solo números'
+    )
+    .toLowerCase(),
   
   password: z.string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
     .max(100, 'La contraseña es demasiado larga')
-    .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
-    .regex(/[a-z]/, 'Debe contener al menos una minúscula')
-    .regex(/[0-9]/, 'Debe contener al menos un número'),
+    .regex(/[A-Z]/, 'Debe contener al menos una letra mayúscula')
+    .regex(/[a-z]/, 'Debe contener al menos una letra minúscula')
+    .regex(/[0-9]/, 'Debe contener al menos un número')
+    .regex(
+      /[!@#$%^&*(),.?":{}|<>]/,
+      'Debe contener al menos un carácter especial (!@#$%^&*...)'
+    )
+    .refine(
+      (val) => !/\s/.test(val),
+      'La contraseña no puede contener espacios'
+    ),
   
   confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Las contraseñas no coinciden',
-  path: ['confirmPassword']
-})
+}).refine(
+  (data) => data.password === data.confirmPassword, 
+  {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword']
+  }
+)
 
 // Estado del formulario
 const nombreCompleto = ref('')
@@ -155,10 +196,10 @@ const errors = reactive({
 // Función para validar un campo específico
 const validateField = (field: string) => {
   const data = {
-    nombreCompleto: nombreCompleto.value,
-    telefono: telefono.value,
-    email: email.value,
-    usuario: usuario.value,
+    nombreCompleto: nombreCompleto.value.trim(),
+    telefono: telefono.value.trim(),
+    email: email.value.trim(),
+    usuario: usuario.value.trim(),
     password: password.value,
     confirmPassword: confirmPassword.value
   }
@@ -171,6 +212,8 @@ const validateField = (field: string) => {
       const fieldError = error.errors.find(err => err.path[0] === field)
       if (fieldError) {
         errors[field as keyof typeof errors] = fieldError.message
+      } else {
+        errors[field as keyof typeof errors] = ''
       }
     }
   }
@@ -188,17 +231,18 @@ const registrarUsuario = async () => {
   clearErrors()
   
   const formData = {
-    nombreCompleto: nombreCompleto.value,
-    telefono: telefono.value,
-    email: email.value,
-    usuario: usuario.value,
+    nombreCompleto: nombreCompleto.value.trim(),
+    telefono: telefono.value.trim(),
+    email: email.value.trim(),
+    usuario: usuario.value.trim(),
     password: password.value,
     confirmPassword: confirmPassword.value
   }
 
   // Validar todos los campos con Zod
+  let validatedData
   try {
-    registroSchema.parse(formData)
+    validatedData = registroSchema.parse(formData)
   } catch (error) {
     if (error instanceof z.ZodError) {
       error.errors.forEach(err => {
@@ -215,8 +259,8 @@ const registrarUsuario = async () => {
   try {
     // 1. Crear usuario en Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: email.value,
-      password: password.value
+      email: validatedData.email,
+      password: validatedData.password
     })
 
     if (authError) {
@@ -228,11 +272,11 @@ const registrarUsuario = async () => {
       .from('cliente')
       .insert([
         {
-          nombre_completo: nombreCompleto.value,
-          telefono: telefono.value,
-          correo: email.value,
-          contraseña: password.value, // NOTA: Considera NO guardar la contraseña aquí si usas Supabase Auth
-          user_id: authData.user?.id // Relacionar con el usuario de Auth
+          nombre_completo: validatedData.nombreCompleto,
+          telefono: validatedData.telefono,
+          correo: validatedData.email,
+          usuario: validatedData.usuario,
+          user_id: authData.user?.id
         }
       ])
 
@@ -240,14 +284,16 @@ const registrarUsuario = async () => {
       throw new Error(insertError.message)
     }
 
-    alert(`¡Registro exitoso! Hemos enviado un correo de verificación a ${email.value}`)
+    alert(`¡Registro exitoso! Hemos enviado un correo de verificación a ${validatedData.email}`)
     router.push('/login')
 
   } catch (error: any) {
     console.error('Error en el registro:', error)
     
-    if (error.message.includes('already registered')) {
+    if (error.message.includes('already registered') || error.message.includes('already exists')) {
       errors.email = 'Este correo ya está registrado'
+    } else if (error.message.includes('user_already_exists')) {
+      errors.usuario = 'Este usuario ya existe'
     } else {
       alert(`Error al registrar: ${error.message}`)
     }
