@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBarAdministradorView />
+
 
     <div class="gestion-clientes-view">
       <div class="container">
@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import NavBarAdministradorView from '@/ComponentesReutilizables/NavBarAdministradorView.vue'
+
 </script>
 
 <style scoped>

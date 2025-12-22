@@ -1,6 +1,6 @@
 <template>
   <div>
-    <NavBarAdministradorView />
+
 
     <div class="reportes-ventas-view">
       <!-- Contenido de Reportes -->
@@ -140,7 +140,7 @@
 </template>
 
 <script setup lang="ts">
-import NavBarAdministradorView from '@/ComponentesReutilizables/NavBarAdministradorView.vue'
+
 import { ref } from 'vue'
 
 interface PaquetePorVencer {
