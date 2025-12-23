@@ -1,14 +1,10 @@
 <template>
   <div>
-
-
     <div class="mis-reservas-view">
       <!-- Contenido de Mis Reservas -->
       <div class="container">
         <div class="card">
-
           <h1>Mis Reservas</h1>
-
           <div 
             v-for="reserva in reservas" 
             :key="reserva.id" 
@@ -29,7 +25,6 @@
               Cancelar Reserva
             </button>
           </div>
-
         </div>
       </div>
     </div>

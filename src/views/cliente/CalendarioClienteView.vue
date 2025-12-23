@@ -1,8 +1,6 @@
 <template>
   <div>
     <!-- NAVBAR -->
-
-
     <!-- CONTENIDO PRINCIPAL -->
     <div class="calendario-cliente-view">
       <div class="container">

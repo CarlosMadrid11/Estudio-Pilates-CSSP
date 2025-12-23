@@ -1,61 +1,49 @@
 <template>
-  <div>
-
-
+<div>
     <div class="metodo-pago-view">
-      <div class="container">
-          <div class="card">
-
-              <div class="left">
-                  <h2>Método de pago</h2>
-
-                  <label class="radio">
-                      <input type="radio" checked>
-                      Tarjeta de débito o crédito
-                  </label>
-
-                  <input v-model="cardNumber" type="text" class="field" placeholder="Introduce los 16 dígitos de la tarjeta">
-                  <input v-model="cardHolderName" type="text" class="field" placeholder="Nombre en la tarjeta">
-
-                  <div class="triple">
-                      <input v-model="expiryMonth" type="text" placeholder="Mes">
-                      <span class="slash">/</span>
-                      <input v-model="expiryYear" type="text" placeholder="Año">
-                      <input v-model="cvv" type="text" placeholder="CVV">
-                  </div>
-
-                  <input v-model="email" type="text" class="field" placeholder="Correo electrónico (opcional)">
-              </div>
-
-              <div class="right">
-                  <div class="item-row">
-                      <span>Paquete Semanal</span>
-                      <span>$211.00 MXN</span>
-                  </div>
-                  <div class="item-row">
-                      <span>Subtotal</span>
-                      <span>$211.00 MXN</span>
-                  </div>
-                  <div class="item-row">
-                      <span>+ IVA</span>
-                      <span>$38.00 MXN</span>
-                  </div>
-
-                  <hr>
-
-                  <div class="total-row">
-                      <span>Total</span>
-                      <span>$249.00 MXN</span>
-                  </div>
-
-                  <button @click="procesarPago" class="btn-pay">Pagar</button>
-                  <button @click="cancelarPago" class="btn-cancel">Cancelar</button>
-              </div>
-
-          </div>
-      </div>
+        <div class="container">
+            <div class="card">
+                <div class="left">
+                    <h2>Método de pago</h2>
+                    <label class="radio">
+                        <input type="radio" checked>
+                        Tarjeta de débito o crédito
+                    </label>
+                    <input v-model="cardNumber" type="text" class="field" placeholder="Introduce los 16 dígitos de la tarjeta">
+                    <input v-model="cardHolderName" type="text" class="field" placeholder="Nombre en la tarjeta">
+                    <div class="triple">
+                        <input v-model="expiryMonth" type="text" placeholder="Mes">
+                        <span class="slash">/</span>
+                        <input v-model="expiryYear" type="text" placeholder="Año">
+                        <input v-model="cvv" type="text" placeholder="CVV">
+                    </div>
+                    <input v-model="email" type="text" class="field" placeholder="Correo electrónico (opcional)">
+                </div>
+                <div class="right">
+                    <div class="item-row">
+                        <span>Paquete Semanal</span>
+                        <span>$211.00 MXN</span>
+                    </div>
+                    <div class="item-row">
+                        <span>Subtotal</span>
+                        <span>$211.00 MXN</span>
+                    </div>
+                    <div class="item-row">
+                        <span>+ IVA</span>
+                        <span>$38.00 MXN</span>
+                    </div>
+                    <hr>
+                    <div class="total-row">
+                        <span>Total</span>
+                        <span>$249.00 MXN</span>
+                    </div>
+                    <button @click="procesarPago" class="btn-pay">Pagar</button>
+                    <button @click="cancelarPago" class="btn-cancel">Cancelar</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
+</div>
 </template>
 
 <script setup lang="ts">

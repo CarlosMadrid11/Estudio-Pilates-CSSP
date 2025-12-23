@@ -1,13 +1,9 @@
 <template>
   <div>
-
-
     <div class="gestion-clientes-view">
       <div class="container">
         <div class="card">
-
           <h1>Gestión de Clientes</h1>
-
           <div class="filters">
             <input type="text" placeholder="Buscar por nombre, teléfono o email">
             <select>
@@ -17,14 +13,13 @@
               <option>Vencidos</option>
               <option>Sin paquete</option>
             </select>
-
             <select>
               <option>Ordenar A-Z</option>
               <option>Fecha de registro</option>
               <option>Clases restantes</option>
             </select>
           </div>
-
+          
           <div class="table-header">
             <span style="width: 20%;">Nombre</span>
             <span style="width: 20%;">Teléfono</span>

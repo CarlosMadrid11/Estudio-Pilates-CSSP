@@ -1,7 +1,5 @@
 <template>
   <div>
-
-  
     <div class="dashboard-cliente-view">
       <div class="container">
 

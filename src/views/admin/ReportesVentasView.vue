@@ -1,7 +1,5 @@
 <template>
   <div>
-
-
     <div class="reportes-ventas-view">
       <!-- Contenido de Reportes -->
       <div class="container">
