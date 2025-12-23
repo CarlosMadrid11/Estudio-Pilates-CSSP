@@ -1,4 +1,5 @@
-<template>
+<template> 
+<!-- Los errores se van a arreglar cuando se implemente la validación de supabase -->
   <div>
     <div class="registro-view">
       <div class="login-container">
