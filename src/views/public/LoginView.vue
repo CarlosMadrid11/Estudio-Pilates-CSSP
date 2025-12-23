@@ -1,7 +1,5 @@
 <template>
   <div>
-
-
     <div class="login-view">
       <!-- Contenedor del formulario de login -->
       <div class="login-container">

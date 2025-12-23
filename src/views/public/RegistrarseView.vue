@@ -1,7 +1,5 @@
 <template>
   <div>
-    <NavBarView />
-
     <div class="registro-view">
       <div class="login-container">
         <div class="form-box">
