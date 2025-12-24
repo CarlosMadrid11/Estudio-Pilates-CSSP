@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <div class="navbar-view">
     <nav class="bg-cssp-yellow shadow-lg">
       <div class="w-full px-4 sm:px-6 lg:px-8">
@@ -39,6 +40,10 @@
         </div>
       </div>
     </nav>
+=======
+  <div class="landing-page-view">
+    <!-- NOTA: El navbar ahora está en App.vue, no aquí -->
+>>>>>>> fix
     
     <!-- Contenedor principal de la landing page -->
     <div class="contenedor-principal">
@@ -48,10 +53,14 @@
         <h1>Pilates Core Strong Studio</h1>
         <h2>Clases de pilates</h2>
         <p class="subtitulo-principal">Tu elijes el lugar y la hora...</p>
+<<<<<<< HEAD
 
         <!-- <a class="boton-paquetes-principal">Ver paquetes</a> -->
         <router-link to="/planes" class="boton-paquetes-principal">Ver paquetes</router-link>
 
+=======
+        <router-link to="/planes" class="boton-paquetes-principal">Ver paquetes</router-link>
+>>>>>>> fix
       </div>
 
       <!-- Sección inferior -->
@@ -62,7 +71,7 @@
             la sucursal, el día, la hora y la cama que quieras tomar las clases. Según se
             adapten a tus necesidades
           </p>
-          <a href="#" class="boton-info-principal">Ver mas información</a>
+          <router-link to="/ayuda" class="boton-info-principal">Ver mas información</router-link>
         </div>
 
         <div class="imagen-info-principal">
@@ -76,7 +85,11 @@
         </div>
         <div class="calendario-texto-principal">
           <h3>Agenda tus clases de forma rápida y sencilla</h3>
+<<<<<<< HEAD
           <a href="#" class="calendario-boton-principal">Ver calendario</a>
+=======
+          <router-link to="/login" class="calendario-boton-principal">Iniciar sesión para agendar</router-link>
+>>>>>>> fix
         </div>
       </div>
       <!-- Sección Sucursales -->
@@ -121,48 +134,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
+import { defineComponent } from 'vue';
 
 export default defineComponent({
-  name: 'NavBarView',
-  setup() {
-    // Para manejar el estado del dropdown
-    const isDropdownOpen = ref(false);
-
-    const toggleDropdown = () => {
-      isDropdownOpen.value = !isDropdownOpen.value;
-    };
-
-    // Lógica para cerrar el dropdown al hacer clic fuera
-    const closeDropdown = (event: MouseEvent) => {
-      const dropdownButton = document.getElementById('dropdownButton');
-      const dropdownMenu = document.getElementById('dropdownMenu');
-
-      if (dropdownButton && dropdownMenu) {
-        if (!dropdownButton.contains(event.target as Node) && !dropdownMenu.contains(event.target as Node)) {
-          isDropdownOpen.value = false;
-        }
-      }
-    };
-
-    onMounted(() => {
-      document.addEventListener('click', closeDropdown);
-    });
-
-    onUnmounted(() => {
-      document.removeEventListener('click', closeDropdown);
-    });
-
-    return {
-      isDropdownOpen,
-      toggleDropdown
-    };
-  }
+  name: 'LandingPageView'
 });
 </script>
 
 <style scoped>
-.navbar-view {
+.landing-page-view {
   width: 100% !important; 
   height: 100% !important;
 }
@@ -208,6 +188,13 @@ export default defineComponent({
   font-weight: bold;
   border-radius: 4px;
   font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.boton-paquetes-principal:hover {
+  background-color: #f39c12;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Sección inferior */
@@ -235,6 +222,12 @@ export default defineComponent({
   text-decoration: none;
   border-radius: 4px;
   font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.boton-info-principal:hover {
+  background-color: white;
+  color: #020726;
 }
 
 .imagen-info-principal {
@@ -288,6 +281,12 @@ export default defineComponent({
   border-radius: 4px;
   font-size: 16px;
   width: fit-content;
+  transition: all 0.3s ease;
+}
+
+.calendario-boton-principal:hover {
+  background-color: white;
+  color: #020726;
 }
 
 /* Sección Sucursales */
@@ -340,5 +339,65 @@ export default defineComponent({
   color: #4fa3ff;
   text-decoration: underline;
   width: fit-content;
+  transition: color 0.3s ease;
+}
+
+.sucursales-link-principal:hover {
+  color: #7bb9ff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-principal h1 {
+    font-size: 32px;
+  }
+
+  .hero-principal h2 {
+    font-size: 24px;
+  }
+
+  .info-principal {
+    flex-direction: column;
+    padding: 40px 20px;
+  }
+
+  .texto-info-principal,
+  .imagen-info-principal {
+    width: 100%;
+  }
+
+  .imagen-info-principal {
+    margin-top: 30px;
+  }
+
+  .calendario-principal {
+    flex-direction: column;
+  }
+
+  .calendario-imagen-principal,
+  .calendario-texto-principal {
+    width: 100%;
+  }
+
+  .calendario-texto-principal {
+    padding: 40px 20px;
+  }
+
+  .sucursales-titulo-principal {
+    font-size: 36px;
+  }
+
+  .sucursales-contenido-principal {
+    flex-direction: column;
+  }
+
+  .sucursales-mapa-principal,
+  .sucursales-texto-principal {
+    width: 100%;
+  }
+
+  .sucursales-mapa-principal img {
+    height: 250px;
+  }
 }
 </style>
