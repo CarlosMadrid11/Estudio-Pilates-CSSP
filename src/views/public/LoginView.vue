@@ -12,7 +12,6 @@
             placeholder="Introduce tu usuario"
             @keyup.enter="iniciarSesion"
           >
-
           <h3>Contraseña</h3>
           <input 
             v-model="password" 
@@ -21,9 +20,7 @@
             placeholder="Introduce tu contraseña"
             @keyup.enter="iniciarSesion"
           >
-
           <button @click="iniciarSesion" class="btn">Iniciar sesión</button>
-
           <div class="link">
             ¿No tienes una cuenta? <router-link to="/registrarse">Regístrate aquí</router-link>
           </div>

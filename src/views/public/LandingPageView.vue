@@ -10,7 +10,6 @@
               <span class="text-3xl">🏋️‍♂️</span> CSSP
             </router-link>
           </div>
-
           <!-- Enlaces principales -->
           <div class="flex items-center space-x-6" id="Links">
             
@@ -51,7 +50,7 @@
         <p class="subtitulo-principal">Tu elijes el lugar y la hora...</p>
 
         <!-- <a class="boton-paquetes-principal">Ver paquetes</a> -->
-         <router-link to="/planes" class="boton-paquetes-principal">Ver paquetes</router-link>
+        <router-link to="/planes" class="boton-paquetes-principal">Ver paquetes</router-link>
 
       </div>
 
@@ -70,77 +69,53 @@
           <img src="@/assets/Pilates.jpg" alt="Clases de pilates">
         </div>
       </div>
-
       <!-- Sección de Calendario -->
       <div class="calendario-principal">
-        
         <div class="calendario-imagen-principal">
           <img src="@/assets/calendario.jpg" alt="Calendario">
         </div>
-
         <div class="calendario-texto-principal">
           <h3>Agenda tus clases de forma rápida y sencilla</h3>
-
           <a href="#" class="calendario-boton-principal">Ver calendario</a>
         </div>
-
       </div>
-
       <!-- Sección Sucursales -->
       <div class="sucursales-principal">
-
         <h2 class="sucursales-titulo-principal">Sucursales</h2>
-
         <div class="sucursales-contenido-principal">
-
           <div class="sucursales-mapa-principal">
             <img src="@/assets/mapa.jpg" alt="Mapa de sucursal">
           </div>
-
           <div class="sucursales-texto-principal">
             <p>Agricultores 24, Tierra Blanca, 80030 Culiacán Rosales, Sin.</p>
-
             <a href="https://maps.app.goo.gl/VSSwsVEhbAibZqxn8" target="_blank" class="sucursales-link-principal">
               Ver en Google Maps
             </a>
           </div>
-
         </div>
-
         <div class="sucursales-contenido-principal">
-
           <div class="sucursales-mapa-principal">
             <img src="@/assets/mapa2.jpg" alt="Mapa de sucursal">
           </div>
-
           <div class="sucursales-texto-principal">
             <p>Av Dr Ruperto Paliza 399-505, Miguel Alemán, 80200 Culiacán Rosales, Sin.</p>
-
             <a href="https://maps.app.goo.gl/mr8krHpmXFm8St3R7" target="_blank" class="sucursales-link-principal">
               Ver en Google Maps
             </a>
           </div>
-
         </div>
-
         <div class="sucursales-contenido-principal">
-
           <div class="sucursales-mapa-principal">
             <img src="@/assets/mapa3.jpg" alt="Mapa de sucursal">
           </div>
-
           <div class="sucursales-texto-principal">
             <p>Fco. Labastida Ochoa, Francisco Labastida Ochoa, 80199 Culiacán Rosales, Sin.</p>
-
             <a href="https://maps.app.goo.gl/NarLGBoWsC2NAYMZ7" target="_blank" class="sucursales-link-principal">
               Ver en Google Maps
             </a>
           </div>
-
         </div>
-
       </div>
-
     </div>
   </div>
 </template>
