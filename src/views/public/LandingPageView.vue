@@ -10,7 +10,7 @@
       <router-link to="/planes" class="boton-paquetes-principal">
         Ver paquetes
       </router-link>
-    </div> 
+    </div>
 
     <!-- Sección inferior -->
     <div class="info-principal">
@@ -26,14 +26,14 @@
       </div>
 
       <div class="imagen-info-principal">
-        <img src="@/assets/Pilates.jpg" alt="Clases de pilates">
+        <img :src="pilatesImg" alt="Clases de pilates">
       </div>
     </div>
 
     <!-- Sección de Calendario -->
     <div class="calendario-principal">
       <div class="calendario-imagen-principal">
-        <img src="@/assets/calendario.jpg" alt="Calendario">
+        <img :src="calendarioImg" alt="Calendario">
       </div>
       <div class="calendario-texto-principal">
         <h3>Agenda tus clases de forma rápida y sencilla</h3>
@@ -49,7 +49,7 @@
       
       <div class="sucursales-contenido-principal">
         <div class="sucursales-mapa-principal">
-          <img src="@/assets/mapa.jpg" alt="Mapa de sucursal">
+          <img :src="mapa1Img" alt="Mapa de sucursal">
         </div>
         <div class="sucursales-texto-principal">
           <p>Agricultores 24, Tierra Blanca, 80030 Culiacán Rosales, Sin.</p>
@@ -61,7 +61,7 @@
 
       <div class="sucursales-contenido-principal">
         <div class="sucursales-mapa-principal">
-          <img src="@/assets/mapa2.jpg" alt="Mapa de sucursal">
+          <img :src="mapa2Img" alt="Mapa de sucursal">
         </div>
         <div class="sucursales-texto-principal">
           <p>Av Dr Ruperto Paliza 399-505, Miguel Alemán, 80200 Culiacán Rosales, Sin.</p>
@@ -73,7 +73,7 @@
 
       <div class="sucursales-contenido-principal">
         <div class="sucursales-mapa-principal">
-          <img src="@/assets/mapa3.jpg" alt="Mapa de sucursal">
+          <img :src="mapa3Img" alt="Mapa de sucursal">
         </div>
         <div class="sucursales-texto-principal">
           <p>Fco. Labastida Ochoa, Francisco Labastida Ochoa, 80199 Culiacán Rosales, Sin.</p>
@@ -87,8 +87,30 @@
 </template>
 
 <script setup lang="ts">
-// No se necesita lógica adicional por ahora
-// Esta vista es completamente estática y pública
+import { ref } from 'vue'
+
+// Placeholders temporales - Reemplaza con tus rutas correctas
+const pilatesImg = ref('https://placehold.co/600x400/333/FFF?text=Pilates')
+const calendarioImg = ref('https://placehold.co/600x400/333/FFF?text=Calendario')
+const mapa1Img = ref('https://placehold.co/600x400/333/FFF?text=Mapa+1')
+const mapa2Img = ref('https://placehold.co/600x400/333/FFF?text=Mapa+2')
+const mapa3Img = ref('https://placehold.co/600x400/333/FFF?text=Mapa+3')
+
+// NOTA: Para usar tus imágenes reales, descomenta estas líneas
+// y ajusta los nombres según tus archivos:
+/*
+import pilatesImgFile from '@/assets/pilates.jpg'
+import calendarioImgFile from '@/assets/calendario.jpg'
+import mapa1ImgFile from '@/assets/mapa.jpg'
+import mapa2ImgFile from '@/assets/mapa2.jpg'
+import mapa3ImgFile from '@/assets/mapa3.jpg'
+
+pilatesImg.value = pilatesImgFile
+calendarioImg.value = calendarioImgFile
+mapa1Img.value = mapa1ImgFile
+mapa2Img.value = mapa2ImgFile
+mapa3Img.value = mapa3ImgFile
+*/
 </script>
 
 <style scoped>
