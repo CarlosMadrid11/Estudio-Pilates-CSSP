@@ -10,7 +10,7 @@
       <router-link to="/planes" class="boton-paquetes-principal">
         Ver paquetes
       </router-link>
-    </div>
+    </div> 
 
     <!-- Sección inferior -->
     <div class="info-principal">
