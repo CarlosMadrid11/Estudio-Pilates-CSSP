@@ -1,199 +1,99 @@
 <template>
-  <div class="navbar-view">
-    <nav class="bg-cssp-yellow shadow-lg">
-      <div class="w-full px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          
-          <!-- Logo -->
-          <div class="shrink-0 flex items-center">
-            <router-link to="/" class="text-2xl font-extrabold text-gray-900 flex items-center gap-2 rounded p-1 hover:bg-yellow-400 transition">
-              <span class="text-3xl">🏋️‍♂️</span> CSSP
-            </router-link>
-          </div>
-
-          <!-- Enlaces principales -->
-          <div class="flex items-center space-x-6" id="Links">
-            
-            <router-link to="/planes" class="nav-link">
-              Planes
-            </router-link>
-            
-            <router-link to="/ayuda" class="nav-link">
-              Ayuda
-            </router-link>
-            
-            <a href="#" class="text-gray-500 cursor-not-allowed px-3 py-2 rounded-md text-sm font-medium">
-              Visitante sin loguear
-            </a>
-          </div>
-
-          <!-- Botón iniciar sesión -->
-          <div class="flex items-center">
-            <router-link 
-              to="/login" 
-              class="bg-white text-gray-900 font-semibold py-2 px-4 border border-transparent rounded-lg shadow-md hover:bg-gray-100 transition duration-300 transform hover:scale-[1.02] active:scale-95"
-            >
-              Iniciar sesión
-            </router-link>
-          </div>
-          
-        </div>
-      </div>
-    </nav>
+  <div class="landing-page">
+    <!-- NOTA: El navbar será dinámico en App.vue, aquí solo va el contenido -->
     
-    <!-- Contenedor principal de la landing page -->
-    <div class="contenedor-principal">
+    <!-- Sección Hero -->
+    <div class="hero-principal">
+      <h1>Pilates Core Strong Studio</h1>
+      <h2>Clases de pilates</h2>
+      <p class="subtitulo-principal">Tu eliges el lugar y la hora...</p>
+      <router-link to="/planes" class="boton-paquetes-principal">
+        Ver paquetes
+      </router-link>
+    </div>
 
-      <!-- Sección Hero -->
-      <div class="hero-principal">
-        <h1>Pilates Core Strong Studio</h1>
-        <h2>Clases de pilates</h2>
-        <p class="subtitulo-principal">Tu elijes el lugar y la hora...</p>
-
-        <!-- <a class="boton-paquetes-principal">Ver paquetes</a> -->
-         <router-link to="/planes" class="boton-paquetes-principal">Ver paquetes</router-link>
-
+    <!-- Sección inferior -->
+    <div class="info-principal">
+      <div class="texto-info-principal">
+        <p>
+          Ofrecemos clases por paquetes, a precios accesibles, en las que tú puedes elegir
+          la sucursal, el día, la hora y la cama que quieras tomar las clases. Según se
+          adapten a tus necesidades.
+        </p>
+        <router-link to="/ayuda" class="boton-info-principal">
+          Ver más información
+        </router-link>
       </div>
 
-      <!-- Sección inferior -->
-      <div class="info-principal">
-        <div class="texto-info-principal">
-          <p>
-            Ofrecemos clases por paquetes, a precios accesibles, en las que tu puedes elegir
-            la sucursal, el día, la hora y la cama que quieras tomar las clases. Según se
-            adapten a tus necesidades
-          </p>
-          <a href="#" class="boton-info-principal">Ver mas información</a>
-        </div>
+      <div class="imagen-info-principal">
+        <img src="@/assets/Pilates.jpg" alt="Clases de pilates">
+      </div>
+    </div>
 
-        <div class="imagen-info-principal">
-          <img src="@/assets/Pilates.jpg" alt="Clases de pilates">
+    <!-- Sección de Calendario -->
+    <div class="calendario-principal">
+      <div class="calendario-imagen-principal">
+        <img src="@/assets/calendario.jpg" alt="Calendario">
+      </div>
+      <div class="calendario-texto-principal">
+        <h3>Agenda tus clases de forma rápida y sencilla</h3>
+        <router-link to="/login" class="calendario-boton-principal">
+          Iniciar sesión para agendar
+        </router-link>
+      </div>
+    </div>
+
+    <!-- Sección Sucursales -->
+    <div class="sucursales-principal">
+      <h2 class="sucursales-titulo-principal">Sucursales</h2>
+      
+      <div class="sucursales-contenido-principal">
+        <div class="sucursales-mapa-principal">
+          <img src="@/assets/mapa.jpg" alt="Mapa de sucursal">
+        </div>
+        <div class="sucursales-texto-principal">
+          <p>Agricultores 24, Tierra Blanca, 80030 Culiacán Rosales, Sin.</p>
+          <a href="https://maps.app.goo.gl/VSSwsVEhbAibZqxn8" target="_blank" class="sucursales-link-principal">
+            Ver en Google Maps
+          </a>
         </div>
       </div>
 
-      <!-- Sección de Calendario -->
-      <div class="calendario-principal">
-        
-        <div class="calendario-imagen-principal">
-          <img src="@/assets/calendario.jpg" alt="Calendario">
+      <div class="sucursales-contenido-principal">
+        <div class="sucursales-mapa-principal">
+          <img src="@/assets/mapa2.jpg" alt="Mapa de sucursal">
         </div>
-
-        <div class="calendario-texto-principal">
-          <h3>Agenda tus clases de forma rápida y sencilla</h3>
-
-          <a href="#" class="calendario-boton-principal">Ver calendario</a>
+        <div class="sucursales-texto-principal">
+          <p>Av Dr Ruperto Paliza 399-505, Miguel Alemán, 80200 Culiacán Rosales, Sin.</p>
+          <a href="https://maps.app.goo.gl/mr8krHpmXFm8St3R7" target="_blank" class="sucursales-link-principal">
+            Ver en Google Maps
+          </a>
         </div>
-
       </div>
 
-      <!-- Sección Sucursales -->
-      <div class="sucursales-principal">
-
-        <h2 class="sucursales-titulo-principal">Sucursales</h2>
-
-        <div class="sucursales-contenido-principal">
-
-          <div class="sucursales-mapa-principal">
-            <img src="@/assets/mapa.jpg" alt="Mapa de sucursal">
-          </div>
-
-          <div class="sucursales-texto-principal">
-            <p>Agricultores 24, Tierra Blanca, 80030 Culiacán Rosales, Sin.</p>
-
-            <a href="https://maps.app.goo.gl/VSSwsVEhbAibZqxn8" target="_blank" class="sucursales-link-principal">
-              Ver en Google Maps
-            </a>
-          </div>
-
+      <div class="sucursales-contenido-principal">
+        <div class="sucursales-mapa-principal">
+          <img src="@/assets/mapa3.jpg" alt="Mapa de sucursal">
         </div>
-
-        <div class="sucursales-contenido-principal">
-
-          <div class="sucursales-mapa-principal">
-            <img src="@/assets/mapa2.jpg" alt="Mapa de sucursal">
-          </div>
-
-          <div class="sucursales-texto-principal">
-            <p>Av Dr Ruperto Paliza 399-505, Miguel Alemán, 80200 Culiacán Rosales, Sin.</p>
-
-            <a href="https://maps.app.goo.gl/mr8krHpmXFm8St3R7" target="_blank" class="sucursales-link-principal">
-              Ver en Google Maps
-            </a>
-          </div>
-
+        <div class="sucursales-texto-principal">
+          <p>Fco. Labastida Ochoa, Francisco Labastida Ochoa, 80199 Culiacán Rosales, Sin.</p>
+          <a href="https://maps.app.goo.gl/NarLGBoWsC2NAYMZ7" target="_blank" class="sucursales-link-principal">
+            Ver en Google Maps
+          </a>
         </div>
-
-        <div class="sucursales-contenido-principal">
-
-          <div class="sucursales-mapa-principal">
-            <img src="@/assets/mapa3.jpg" alt="Mapa de sucursal">
-          </div>
-
-          <div class="sucursales-texto-principal">
-            <p>Fco. Labastida Ochoa, Francisco Labastida Ochoa, 80199 Culiacán Rosales, Sin.</p>
-
-            <a href="https://maps.app.goo.gl/NarLGBoWsC2NAYMZ7" target="_blank" class="sucursales-link-principal">
-              Ver en Google Maps
-            </a>
-          </div>
-
-        </div>
-
       </div>
-
     </div>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, onMounted, onUnmounted } from 'vue';
-
-export default defineComponent({
-  name: 'NavBarView',
-  setup() {
-    // Para manejar el estado del dropdown
-    const isDropdownOpen = ref(false);
-
-    const toggleDropdown = () => {
-      isDropdownOpen.value = !isDropdownOpen.value;
-    };
-
-    // Lógica para cerrar el dropdown al hacer clic fuera
-    const closeDropdown = (event: MouseEvent) => {
-      const dropdownButton = document.getElementById('dropdownButton');
-      const dropdownMenu = document.getElementById('dropdownMenu');
-
-      if (dropdownButton && dropdownMenu) {
-        if (!dropdownButton.contains(event.target as Node) && !dropdownMenu.contains(event.target as Node)) {
-          isDropdownOpen.value = false;
-        }
-      }
-    };
-
-    onMounted(() => {
-      document.addEventListener('click', closeDropdown);
-    });
-
-    onUnmounted(() => {
-      document.removeEventListener('click', closeDropdown);
-    });
-
-    return {
-      isDropdownOpen,
-      toggleDropdown
-    };
-  }
-});
+<script setup lang="ts">
+// No se necesita lógica adicional por ahora
+// Esta vista es completamente estática y pública
 </script>
 
 <style scoped>
-.navbar-view {
-  width: 100% !important; 
-  height: 100% !important;
-}
-
-/* Estilos del contenedor principal */
-.contenedor-principal {
+/* Reset para eliminar margins y paddings heredados */
+.landing-page {
   width: 100%;
   margin: 0;
   padding: 0;
@@ -206,22 +106,23 @@ export default defineComponent({
   color: white;
   text-align: center;
   padding: 80px 20px;
+  margin: 0;
 }
 
 .hero-principal h1 {
   font-size: 48px;
   font-weight: bold;
-  margin-bottom: 10px;
+  margin: 0 0 10px 0;
 }
 
 .hero-principal h2 {
   font-size: 36px;
-  margin-bottom: 20px;
+  margin: 0 0 20px 0;
 }
 
 .subtitulo-principal {
   font-size: 20px;
-  margin-bottom: 30px;
+  margin: 0 0 30px 0;
 }
 
 .boton-paquetes-principal {
@@ -233,6 +134,13 @@ export default defineComponent({
   font-weight: bold;
   border-radius: 4px;
   font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.boton-paquetes-principal:hover {
+  background-color: #f39c12;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Sección inferior */
@@ -243,6 +151,7 @@ export default defineComponent({
   background-color: #020726;
   padding: 60px 50px;
   color: white;
+  margin: 0;
 }
 
 .texto-info-principal {
@@ -251,15 +160,24 @@ export default defineComponent({
   line-height: 1.5;
 }
 
+.texto-info-principal p {
+  margin: 0 0 20px 0;
+}
+
 .boton-info-principal {
   display: inline-block;
-  margin-top: 20px;
   padding: 12px 30px;
   border: 2px solid white;
   color: white;
   text-decoration: none;
   border-radius: 4px;
   font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.boton-info-principal:hover {
+  background-color: white;
+  color: #020726;
 }
 
 .imagen-info-principal {
@@ -269,6 +187,7 @@ export default defineComponent({
 .imagen-info-principal img {
   width: 100%;
   border-radius: 10px;
+  display: block;
 }
 
 /* Sección Calendario */
@@ -276,6 +195,7 @@ export default defineComponent({
   display: flex;
   width: 100%;
   background-color: #333333;
+  margin: 0;
 }
 
 .calendario-imagen-principal {
@@ -286,6 +206,7 @@ export default defineComponent({
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .calendario-texto-principal {
@@ -300,7 +221,7 @@ export default defineComponent({
 
 .calendario-texto-principal h3 {
   font-size: 24px;
-  margin-bottom: 30px;
+  margin: 0 0 30px 0;
   line-height: 1.4;
 }
 
@@ -313,6 +234,12 @@ export default defineComponent({
   border-radius: 4px;
   font-size: 16px;
   width: fit-content;
+  transition: all 0.3s ease;
+}
+
+.calendario-boton-principal:hover {
+  background-color: white;
+  color: #020726;
 }
 
 /* Sección Sucursales */
@@ -321,11 +248,12 @@ export default defineComponent({
   background-color: #333333;
   color: white;
   padding: 50px 40px;
+  margin: 0;
 }
 
 .sucursales-titulo-principal {
   font-size: 52px;
-  margin-bottom: 30px;
+  margin: 0 0 30px 0;
   text-align: center;
 }
 
@@ -338,6 +266,10 @@ export default defineComponent({
   overflow: hidden;
 }
 
+.sucursales-contenido-principal:last-child {
+  margin-bottom: 0;
+}
+
 .sucursales-mapa-principal {
   width: 45%;
 }
@@ -346,6 +278,7 @@ export default defineComponent({
   width: 100%;
   height: 350px;
   object-fit: cover;
+  display: block;
 }
 
 .sucursales-texto-principal {
@@ -359,11 +292,75 @@ export default defineComponent({
   line-height: 1.4;
 }
 
+.sucursales-texto-principal p {
+  margin: 0;
+}
+
 .sucursales-link-principal {
   margin-top: 20px;
   font-size: 17px;
   color: #4fa3ff;
   text-decoration: underline;
   width: fit-content;
+  transition: color 0.3s ease;
+}
+
+.sucursales-link-principal:hover {
+  color: #7bb9ff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-principal h1 {
+    font-size: 32px;
+  }
+
+  .hero-principal h2 {
+    font-size: 24px;
+  }
+
+  .info-principal {
+    flex-direction: column;
+    padding: 40px 20px;
+  }
+
+  .texto-info-principal,
+  .imagen-info-principal {
+    width: 100%;
+  }
+
+  .imagen-info-principal {
+    margin-top: 30px;
+  }
+
+  .calendario-principal {
+    flex-direction: column;
+  }
+
+  .calendario-imagen-principal,
+  .calendario-texto-principal {
+    width: 100%;
+  }
+
+  .calendario-texto-principal {
+    padding: 40px 20px;
+  }
+
+  .sucursales-titulo-principal {
+    font-size: 36px;
+  }
+
+  .sucursales-contenido-principal {
+    flex-direction: column;
+  }
+
+  .sucursales-mapa-principal,
+  .sucursales-texto-principal {
+    width: 100%;
+  }
+
+  .sucursales-mapa-principal img {
+    height: 250px;
+  }
 }
 </style>
