@@ -1,49 +1,6 @@
 <template>
-<<<<<<< HEAD
-  <div class="navbar-view">
-    <nav class="bg-cssp-yellow shadow-lg">
-      <div class="w-full px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          
-          <!-- Logo -->
-          <div class="shrink-0 flex items-center">
-            <router-link to="/" class="text-2xl font-extrabold text-gray-900 flex items-center gap-2 rounded p-1 hover:bg-yellow-400 transition">
-              <span class="text-3xl">🏋️‍♂️</span> CSSP
-            </router-link>
-          </div>
-          <!-- Enlaces principales -->
-          <div class="flex items-center space-x-6" id="Links">
-            
-            <router-link to="/planes" class="nav-link">
-              Planes
-            </router-link>
-            
-            <router-link to="/ayuda" class="nav-link">
-              Ayuda
-            </router-link>
-            
-            <a href="#" class="text-gray-500 cursor-not-allowed px-3 py-2 rounded-md text-sm font-medium">
-              Visitante sin loguear
-            </a>
-          </div>
-
-          <!-- Botón iniciar sesión -->
-          <div class="flex items-center">
-            <router-link 
-              to="/login" 
-              class="bg-white text-gray-900 font-semibold py-2 px-4 border border-transparent rounded-lg shadow-md hover:bg-gray-100 transition duration-300 transform hover:scale-[1.02] active:scale-95"
-            >
-              Iniciar sesión
-            </router-link>
-          </div>
-          
-        </div>
-      </div>
-    </nav>
-=======
   <div class="landing-page-view">
     <!-- NOTA: El navbar ahora está en App.vue, no aquí -->
->>>>>>> fix
     
     <!-- Contenedor principal de la landing page -->
     <div class="contenedor-principal">
@@ -53,14 +10,7 @@
         <h1>Pilates Core Strong Studio</h1>
         <h2>Clases de pilates</h2>
         <p class="subtitulo-principal">Tu elijes el lugar y la hora...</p>
-<<<<<<< HEAD
-
-        <!-- <a class="boton-paquetes-principal">Ver paquetes</a> -->
         <router-link to="/planes" class="boton-paquetes-principal">Ver paquetes</router-link>
-
-=======
-        <router-link to="/planes" class="boton-paquetes-principal">Ver paquetes</router-link>
->>>>>>> fix
       </div>
 
       <!-- Sección inferior -->
@@ -85,11 +35,7 @@
         </div>
         <div class="calendario-texto-principal">
           <h3>Agenda tus clases de forma rápida y sencilla</h3>
-<<<<<<< HEAD
-          <a href="#" class="calendario-boton-principal">Ver calendario</a>
-=======
           <router-link to="/login" class="calendario-boton-principal">Iniciar sesión para agendar</router-link>
->>>>>>> fix
         </div>
       </div>
       <!-- Sección Sucursales -->
