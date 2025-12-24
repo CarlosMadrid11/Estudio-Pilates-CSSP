@@ -1,121 +1,102 @@
 <template>
-  <div class="landing-page">
-    <!-- NOTA: El navbar será dinámico en App.vue, aquí solo va el contenido -->
+  <div class="landing-page-view">
+    <!-- NOTA: El navbar ahora está en App.vue, no aquí -->
     
-    <!-- Sección Hero -->
-    <div class="hero-principal">
-      <h1>Pilates Core Strong Studio</h1>
-      <h2>Clases de pilates</h2>
-      <p class="subtitulo-principal">Tu eliges el lugar y la hora...</p>
-      <router-link to="/planes" class="boton-paquetes-principal">
-        Ver paquetes
-      </router-link>
-    </div>
+    <!-- Contenedor principal de la landing page -->
+    <div class="contenedor-principal">
 
-    <!-- Sección inferior -->
-    <div class="info-principal">
-      <div class="texto-info-principal">
-        <p>
-          Ofrecemos clases por paquetes, a precios accesibles, en las que tú puedes elegir
-          la sucursal, el día, la hora y la cama que quieras tomar las clases. Según se
-          adapten a tus necesidades.
-        </p>
-        <router-link to="/ayuda" class="boton-info-principal">
-          Ver más información
-        </router-link>
+      <!-- Sección Hero -->
+      <div class="hero-principal">
+        <h1>Pilates Core Strong Studio</h1>
+        <h2>Clases de pilates</h2>
+        <p class="subtitulo-principal">Tu elijes el lugar y la hora...</p>
+        <router-link to="/planes" class="boton-paquetes-principal">Ver paquetes</router-link>
       </div>
 
-      <div class="imagen-info-principal">
-        <img :src="pilatesImg" alt="Clases de pilates">
-      </div>
-    </div>
-
-    <!-- Sección de Calendario -->
-    <div class="calendario-principal">
-      <div class="calendario-imagen-principal">
-        <img :src="calendarioImg" alt="Calendario">
-      </div>
-      <div class="calendario-texto-principal">
-        <h3>Agenda tus clases de forma rápida y sencilla</h3>
-        <router-link to="/login" class="calendario-boton-principal">
-          Iniciar sesión para agendar
-        </router-link>
-      </div>
-    </div>
-
-    <!-- Sección Sucursales -->
-    <div class="sucursales-principal">
-      <h2 class="sucursales-titulo-principal">Sucursales</h2>
-      
-      <div class="sucursales-contenido-principal">
-        <div class="sucursales-mapa-principal">
-          <img :src="mapa1Img" alt="Mapa de sucursal">
+      <!-- Sección inferior -->
+      <div class="info-principal">
+        <div class="texto-info-principal">
+          <p>
+            Ofrecemos clases por paquetes, a precios accesibles, en las que tu puedes elegir
+            la sucursal, el día, la hora y la cama que quieras tomar las clases. Según se
+            adapten a tus necesidades
+          </p>
+          <router-link to="/ayuda" class="boton-info-principal">Ver mas información</router-link>
         </div>
-        <div class="sucursales-texto-principal">
-          <p>Agricultores 24, Tierra Blanca, 80030 Culiacán Rosales, Sin.</p>
-          <a href="https://maps.app.goo.gl/VSSwsVEhbAibZqxn8" target="_blank" class="sucursales-link-principal">
-            Ver en Google Maps
-          </a>
+
+        <div class="imagen-info-principal">
+          <img src="@/assets/Pilates.jpg" alt="Clases de pilates">
         </div>
       </div>
 
-      <div class="sucursales-contenido-principal">
-        <div class="sucursales-mapa-principal">
-          <img :src="mapa2Img" alt="Mapa de sucursal">
+      <!-- Sección de Calendario -->
+      <div class="calendario-principal">
+        <div class="calendario-imagen-principal">
+          <img src="@/assets/calendario.jpg" alt="Calendario">
         </div>
-        <div class="sucursales-texto-principal">
-          <p>Av Dr Ruperto Paliza 399-505, Miguel Alemán, 80200 Culiacán Rosales, Sin.</p>
-          <a href="https://maps.app.goo.gl/mr8krHpmXFm8St3R7" target="_blank" class="sucursales-link-principal">
-            Ver en Google Maps
-          </a>
+        <div class="calendario-texto-principal">
+          <h3>Agenda tus clases de forma rápida y sencilla</h3>
+          <router-link to="/login" class="calendario-boton-principal">Iniciar sesión para agendar</router-link>
         </div>
       </div>
 
-      <div class="sucursales-contenido-principal">
-        <div class="sucursales-mapa-principal">
-          <img :src="mapa3Img" alt="Mapa de sucursal">
+      <!-- Sección Sucursales -->
+      <div class="sucursales-principal">
+        <h2 class="sucursales-titulo-principal">Sucursales</h2>
+        <div class="sucursales-contenido-principal">
+          <div class="sucursales-mapa-principal">
+            <img src="@/assets/mapa.jpg" alt="Mapa de sucursal">
+          </div>
+          <div class="sucursales-texto-principal">
+            <p>Agricultores 24, Tierra Blanca, 80030 Culiacán Rosales, Sin.</p>
+            <a href="https://maps.app.goo.gl/VSSwsVEhbAibZqxn8" target="_blank" class="sucursales-link-principal">
+              Ver en Google Maps
+            </a>
+          </div>
         </div>
-        <div class="sucursales-texto-principal">
-          <p>Fco. Labastida Ochoa, Francisco Labastida Ochoa, 80199 Culiacán Rosales, Sin.</p>
-          <a href="https://maps.app.goo.gl/NarLGBoWsC2NAYMZ7" target="_blank" class="sucursales-link-principal">
-            Ver en Google Maps
-          </a>
+        <div class="sucursales-contenido-principal">
+          <div class="sucursales-mapa-principal">
+            <img src="@/assets/mapa2.jpg" alt="Mapa de sucursal">
+          </div>
+          <div class="sucursales-texto-principal">
+            <p>Av Dr Ruperto Paliza 399-505, Miguel Alemán, 80200 Culiacán Rosales, Sin.</p>
+            <a href="https://maps.app.goo.gl/mr8krHpmXFm8St3R7" target="_blank" class="sucursales-link-principal">
+              Ver en Google Maps
+            </a>
+          </div>
+        </div>
+        <div class="sucursales-contenido-principal">
+          <div class="sucursales-mapa-principal">
+            <img src="@/assets/mapa3.jpg" alt="Mapa de sucursal">
+          </div>
+          <div class="sucursales-texto-principal">
+            <p>Fco. Labastida Ochoa, Francisco Labastida Ochoa, 80199 Culiacán Rosales, Sin.</p>
+            <a href="https://maps.app.goo.gl/NarLGBoWsC2NAYMZ7" target="_blank" class="sucursales-link-principal">
+              Ver en Google Maps
+            </a>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue'
+<script lang="ts">
+import { defineComponent } from 'vue';
 
-// Placeholders temporales - Reemplaza con tus rutas correctas
-const pilatesImg = ref('https://placehold.co/600x400/333/FFF?text=Pilates')
-const calendarioImg = ref('https://placehold.co/600x400/333/FFF?text=Calendario')
-const mapa1Img = ref('https://placehold.co/600x400/333/FFF?text=Mapa+1')
-const mapa2Img = ref('https://placehold.co/600x400/333/FFF?text=Mapa+2')
-const mapa3Img = ref('https://placehold.co/600x400/333/FFF?text=Mapa+3')
-
-// NOTA: Para usar tus imágenes reales, descomenta estas líneas
-// y ajusta los nombres según tus archivos:
-/*
-import pilatesImgFile from '@/assets/pilates.jpg'
-import calendarioImgFile from '@/assets/calendario.jpg'
-import mapa1ImgFile from '@/assets/mapa.jpg'
-import mapa2ImgFile from '@/assets/mapa2.jpg'
-import mapa3ImgFile from '@/assets/mapa3.jpg'
-
-pilatesImg.value = pilatesImgFile
-calendarioImg.value = calendarioImgFile
-mapa1Img.value = mapa1ImgFile
-mapa2Img.value = mapa2ImgFile
-mapa3Img.value = mapa3ImgFile
-*/
+export default defineComponent({
+  name: 'LandingPageView'
+});
 </script>
 
 <style scoped>
-/* Reset para eliminar margins y paddings heredados */
-.landing-page {
+.landing-page-view {
+  width: 100% !important; 
+  height: 100% !important;
+}
+
+/* Estilos del contenedor principal */
+.contenedor-principal {
   width: 100%;
   margin: 0;
   padding: 0;
@@ -128,23 +109,22 @@ mapa3Img.value = mapa3ImgFile
   color: white;
   text-align: center;
   padding: 80px 20px;
-  margin: 0;
 }
 
 .hero-principal h1 {
   font-size: 48px;
   font-weight: bold;
-  margin: 0 0 10px 0;
+  margin-bottom: 10px;
 }
 
 .hero-principal h2 {
   font-size: 36px;
-  margin: 0 0 20px 0;
+  margin-bottom: 20px;
 }
 
 .subtitulo-principal {
   font-size: 20px;
-  margin: 0 0 30px 0;
+  margin-bottom: 30px;
 }
 
 .boton-paquetes-principal {
@@ -173,7 +153,6 @@ mapa3Img.value = mapa3ImgFile
   background-color: #020726;
   padding: 60px 50px;
   color: white;
-  margin: 0;
 }
 
 .texto-info-principal {
@@ -182,12 +161,9 @@ mapa3Img.value = mapa3ImgFile
   line-height: 1.5;
 }
 
-.texto-info-principal p {
-  margin: 0 0 20px 0;
-}
-
 .boton-info-principal {
   display: inline-block;
+  margin-top: 20px;
   padding: 12px 30px;
   border: 2px solid white;
   color: white;
@@ -209,7 +185,6 @@ mapa3Img.value = mapa3ImgFile
 .imagen-info-principal img {
   width: 100%;
   border-radius: 10px;
-  display: block;
 }
 
 /* Sección Calendario */
@@ -217,7 +192,6 @@ mapa3Img.value = mapa3ImgFile
   display: flex;
   width: 100%;
   background-color: #333333;
-  margin: 0;
 }
 
 .calendario-imagen-principal {
@@ -228,7 +202,6 @@ mapa3Img.value = mapa3ImgFile
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
 }
 
 .calendario-texto-principal {
@@ -243,7 +216,7 @@ mapa3Img.value = mapa3ImgFile
 
 .calendario-texto-principal h3 {
   font-size: 24px;
-  margin: 0 0 30px 0;
+  margin-bottom: 30px;
   line-height: 1.4;
 }
 
@@ -270,12 +243,11 @@ mapa3Img.value = mapa3ImgFile
   background-color: #333333;
   color: white;
   padding: 50px 40px;
-  margin: 0;
 }
 
 .sucursales-titulo-principal {
   font-size: 52px;
-  margin: 0 0 30px 0;
+  margin-bottom: 30px;
   text-align: center;
 }
 
@@ -288,10 +260,6 @@ mapa3Img.value = mapa3ImgFile
   overflow: hidden;
 }
 
-.sucursales-contenido-principal:last-child {
-  margin-bottom: 0;
-}
-
 .sucursales-mapa-principal {
   width: 45%;
 }
@@ -300,7 +268,6 @@ mapa3Img.value = mapa3ImgFile
   width: 100%;
   height: 350px;
   object-fit: cover;
-  display: block;
 }
 
 .sucursales-texto-principal {
@@ -312,10 +279,6 @@ mapa3Img.value = mapa3ImgFile
   justify-content: center;
   font-size: 18px;
   line-height: 1.4;
-}
-
-.sucursales-texto-principal p {
-  margin: 0;
 }
 
 .sucursales-link-principal {
