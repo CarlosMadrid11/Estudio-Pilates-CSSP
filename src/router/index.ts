@@ -21,6 +21,9 @@ import RegistroAsistenciaView from '@/views/instructor/RegistroAsistenciaView.vu
 import GestionClientesView from '@/views/admin/GestionClientesView.vue'
 import ReportesVentasView from '@/views/admin/ReportesVentasView.vue'
 
+//Testing
+import AuthTestView from '@/views/AuthTestView.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -95,6 +98,11 @@ const router = createRouter({
       path: '/reportes-ventas',
       name: 'reportes-ventas',
       component: ReportesVentasView
+    },
+    {
+      path: '/auth-test',
+      name: 'auth-test',
+      component: AuthTestView
     }
   ]
 })
