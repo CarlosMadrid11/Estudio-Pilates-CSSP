@@ -13,11 +13,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import NavbarGuest from '@/composables/NavBarGuest.vue'
+import NavbarGuest from '@/components/NavBarGuest.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
+const authStore = useAuthStore()
+
+// Inicializar sesión al cargar la app
+onMounted(() => {
+  authStore.init()
+})
 
 // Determinar si se debe mostrar el navbar
 // Por ahora siempre true, luego ajustaremos según la ruta
