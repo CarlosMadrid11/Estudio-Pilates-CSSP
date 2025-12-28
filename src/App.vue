@@ -1,5 +1,4 @@
 <template>
-  <!-- Estructura actual del app -->
   <div id="app">
     <!-- Navbar Dinámico -->
     <NavbarDynamic v-if="shouldShowNavbar" />
@@ -62,19 +61,12 @@ html, body {
   width: 100%;
   min-height: 100vh;
   margin: 0;
-  padding-top: 64px; /* Espacio para el navbar fixed */
+  padding: 0;
+  padding-top: 32px; /* Mismo tamaño del navbar (h-16 = 4rem = 64px) */
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   display: flex;
   flex-direction: column;
-}
-
-/* Estilos globales para router-view */
-.router-view {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  flex: 1;
 }
 </style>
