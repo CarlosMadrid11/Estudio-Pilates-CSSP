@@ -1,14 +1,14 @@
 <template>
   <!-- Estructura actual del app -->
   <div id="app">
-    <!-- Navbar Dinámico --> 
+    <!-- Navbar Dinámico -->
     <NavbarDynamic v-if="shouldShowNavbar" />
     
     <!-- Vista actual -->
     <router-view />
     
-    <!-- Footer (si decides agregarlo después) -->
-    <!-- <Footer v-if="shouldShowFooter" /> -->
+    <!-- Footer -->
+    <Footer v-if="shouldShowFooter" />
   </div>
 </template>
 
@@ -16,6 +16,7 @@
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import NavbarDynamic from '@/components/NavbarDynamic.vue'
+import Footer from '@/components/Footer.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -32,6 +33,12 @@ const shouldShowNavbar = computed(() => {
   // Rutas donde NO queremos navbar (por ejemplo, login podría no tenerlo)
   const routesWithoutNavbar: string[] = []
   return !routesWithoutNavbar.includes(route.name as string)
+})
+
+// Determinar si se debe mostrar el footer
+const shouldShowFooter = computed(() => {
+  // Por ahora siempre mostramos el footer en todas las vistas
+  return true
 })
 </script>
 
@@ -55,10 +62,12 @@ html, body {
   width: 100%;
   min-height: 100vh;
   margin: 0;
-  padding: 0;
+  padding-top: 64px; /* Espacio para el navbar fixed */
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Estilos globales para router-view */
@@ -66,5 +75,6 @@ html, body {
   width: 100%;
   margin: 0;
   padding: 0;
+  flex: 1;
 }
 </style>

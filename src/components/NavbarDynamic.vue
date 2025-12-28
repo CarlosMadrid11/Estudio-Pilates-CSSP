@@ -1,4 +1,4 @@
-<template> <!-- Navbar dinamico con los 4 roles integrados-->
+<template> <!-- Navbar dinamico con los 4 roles-->
 <nav class="bg-cssp-yellow shadow-lg">
 <div class="w-full px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16">
@@ -9,6 +9,7 @@
         <span class="text-3xl">🏋️‍♂️</span> CSSP
         </router-link>
     </div>
+
     <!-- Enlaces principales - Dinámicos según el rol -->
     <div class="flex items-center space-x-6" id="Links">
         
@@ -148,6 +149,11 @@ nav {
   width: 100%;
   margin: 0;
   padding: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  background-color: #f1c40f;
 }
 
 /* Contenedor del navbar */
