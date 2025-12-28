@@ -1,6 +1,7 @@
 <template>
+  <!-- Estructura actual del app -->
   <div id="app">
-    <!-- Navbar Dinámico -->
+    <!-- Navbar Dinámico --> 
     <NavbarDynamic v-if="shouldShowNavbar" />
     
     <!-- Vista actual -->
