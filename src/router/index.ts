@@ -115,18 +115,25 @@ const router = createRouter({
       meta: { requiresAuth: true, allowedRoles: ['admin'] }
     },
 
-    // Testing (accesible para todos durante desarrollo)
+    // Testing - SIN restricciones (zona libre para desarrollo)
     {
       path: '/test-auth',
       name: 'test-auth',
       component: AuthTestView,
-      meta: { requiresAuth: false, allowedRoles: ['guest', 'cliente', 'instructor', 'admin'] }
+      meta: { isTestRoute: true } // Marcador especial para el guard
     }
   ]
 })
 
 // Navigation Guards - Protección de rutas
 router.beforeEach((to, from, next) => {
+  // EXCEPCIÓN: Si es una ruta de testing, permitir acceso sin restricciones
+  if (to.meta.isTestRoute) {
+    console.log('🧪 Ruta de testing detectada, permitiendo acceso sin restricciones')
+    next()
+    return
+  }
+
   const authStore = useAuthStore()
   
   // Obtener metadata de la ruta
