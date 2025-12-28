@@ -41,10 +41,6 @@
             <router-link to="/calendario-cliente" class="nav-link">
               Calendario
             </router-link>
-            
-            <router-link to="/metodo-pago" class="nav-link">
-              Método de pago
-            </router-link>
 
             <a href="#" class="text-gray-500 cursor-not-allowed px-3 py-2 rounded-md text-sm font-medium">
               Cliente
