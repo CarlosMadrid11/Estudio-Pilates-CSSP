@@ -1,8 +1,7 @@
 <template>
   <div id="app">
-    <!-- Navbar Dinámico (pendiente de implementar) -->
-    <!-- Por ahora ponemos el navbar guest temporal -->
-    <NavbarGuest v-if="shouldShowNavbar" />
+    <!-- Navbar Dinámico -->
+    <NavbarDynamic v-if="shouldShowNavbar" />
     
     <!-- Vista actual -->
     <router-view />
@@ -15,7 +14,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import NavbarGuest from '@/components/NavBarGuest.vue'
+import NavbarDynamic from '@/components/NavbarDynamic.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
