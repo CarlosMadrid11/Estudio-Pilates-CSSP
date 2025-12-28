@@ -253,5 +253,5 @@ Proyecto académico y privado.
 
 ---
 
-Última actualización: Diciembre 2025
+Última actualización: 28 de Diciembre 2025 fase 1 terminada
 
