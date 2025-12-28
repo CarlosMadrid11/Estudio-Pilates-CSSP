@@ -41,6 +41,10 @@
             <router-link to="/calendario-cliente" class="nav-link">
               Calendario
             </router-link>
+            
+            <router-link to="/metodo-pago" class="nav-link">
+              Método de pago
+            </router-link>
 
             <a href="#" class="text-gray-500 cursor-not-allowed px-3 py-2 rounded-md text-sm font-medium">
               Cliente
@@ -63,6 +67,25 @@
 
             <a href="#" class="text-gray-500 cursor-not-allowed px-3 py-2 rounded-md text-sm font-medium">
               Administrador
+            </a>
+
+            <div class="flex items-center">
+              <i class="bi bi-person-circle text-gray-800" style="font-size: 28px;"></i>
+            </div>
+          </template>
+
+          <!-- Links para INSTRUCTOR -->
+          <template v-if="authStore.isInstructor">
+            <router-link to="/calendario-instructor" class="nav-link">
+              Calendario
+            </router-link>
+
+            <router-link to="/registro-asistencia" class="nav-link">
+              Registro asistencia
+            </router-link>
+
+            <a href="#" class="text-gray-500 cursor-not-allowed px-3 py-2 rounded-md text-sm font-medium">
+              Instructor
             </a>
 
             <div class="flex items-center">
