@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import type { UserRole } from '@/stores/auth'
 
 // Public
 import LandingPageView from '@/views/public/LandingPageView.vue'
@@ -21,7 +23,7 @@ import RegistroAsistenciaView from '@/views/instructor/RegistroAsistenciaView.vu
 import GestionClientesView from '@/views/admin/GestionClientesView.vue'
 import ReportesVentasView from '@/views/admin/ReportesVentasView.vue'
 
-//Testing
+// Testing
 import AuthTestView from '@/views/AuthTestView.vue'
 
 const router = createRouter({
@@ -31,80 +33,150 @@ const router = createRouter({
     {
       path: '/',
       name: 'landing',
-      component: LandingPageView
+      component: LandingPageView,
+      meta: { requiresAuth: false, allowedRoles: ['guest', 'cliente', 'instructor', 'admin'] }
     },
     {
       path: '/planes',
       name: 'planes',
-      component: PlanesView
+      component: PlanesView,
+      meta: { requiresAuth: false, allowedRoles: ['guest', 'cliente', 'instructor', 'admin'] }
     },
     {
       path: '/ayuda',
       name: 'ayuda',
-      component: AyudaView
+      component: AyudaView,
+      meta: { requiresAuth: false, allowedRoles: ['guest', 'cliente', 'instructor', 'admin'] }
     },
     {
       path: '/login',
       name: 'login',
-      component: LoginView
+      component: LoginView,
+      meta: { requiresAuth: false, allowedRoles: ['guest'], redirectIfAuth: true }
     },
     {
-      path: '/registro',
-      name: 'registro',
-      component: RegistrarseView
+      path: '/registrarse',
+      name: 'registrarse',
+      component: RegistrarseView,
+      meta: { requiresAuth: false, allowedRoles: ['guest'], redirectIfAuth: true }
     },
 
     // Cliente
     {
-      path: '/dashboard',
+      path: '/dashboard-cliente',
       name: 'dashboard-cliente',
-      component: DashboardClienteView
+      component: DashboardClienteView,
+      meta: { requiresAuth: true, allowedRoles: ['cliente', 'admin'] }
     },
     {
       path: '/mis-reservas',
       name: 'mis-reservas',
-      component: MisReservasView
+      component: MisReservasView,
+      meta: { requiresAuth: true, allowedRoles: ['cliente', 'admin'] }
     },
     {
       path: '/calendario-cliente',
       name: 'calendario-cliente',
-      component: CalendarioClienteView
+      component: CalendarioClienteView,
+      meta: { requiresAuth: true, allowedRoles: ['cliente', 'admin'] }
     },
     {
       path: '/metodo-pago',
       name: 'metodo-pago',
-      component: MetodoPagoView
+      component: MetodoPagoView,
+      meta: { requiresAuth: true, allowedRoles: ['cliente', 'admin'] }
     },
 
     // Instructor
     {
       path: '/calendario-instructor',
       name: 'calendario-instructor',
-      component: CalendarioInstructorView
+      component: CalendarioInstructorView,
+      meta: { requiresAuth: true, allowedRoles: ['instructor', 'admin'] }
     },
     {
       path: '/registro-asistencia',
       name: 'registro-asistencia',
-      component: RegistroAsistenciaView
+      component: RegistroAsistenciaView,
+      meta: { requiresAuth: true, allowedRoles: ['instructor', 'admin'] }
     },
 
     // Admin
     {
       path: '/gestion-clientes',
       name: 'gestion-clientes',
-      component: GestionClientesView
+      component: GestionClientesView,
+      meta: { requiresAuth: true, allowedRoles: ['admin'] }
     },
     {
       path: '/reportes-ventas',
       name: 'reportes-ventas',
-      component: ReportesVentasView
+      component: ReportesVentasView,
+      meta: { requiresAuth: true, allowedRoles: ['admin'] }
     },
+
+    // Testing (accesible para todos durante desarrollo)
     {
-      path: '/auth-test',
-      name: 'auth-test',
-      component: AuthTestView
+      path: '/test-auth',
+      name: 'test-auth',
+      component: AuthTestView,
+      meta: { requiresAuth: false, allowedRoles: ['guest', 'cliente', 'instructor', 'admin'] }
     }
   ]
+})
+
+// Navigation Guards - Protección de rutas
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  
+  // Obtener metadata de la ruta
+  const requiresAuth = to.meta.requiresAuth as boolean
+  const allowedRoles = to.meta.allowedRoles as UserRole[]
+  const redirectIfAuth = to.meta.redirectIfAuth as boolean
+  
+  const isAuthenticated = authStore.isAuthenticated
+  const userRole = authStore.role
+
+  // CASO 1: Ruta requiere NO estar autenticado (login, registro)
+  if (redirectIfAuth && isAuthenticated) {
+    console.log(`🚫 Ya estás autenticado como ${userRole}, redirigiendo...`)
+    // Redirigir al dashboard según el rol
+    const dashboards = {
+      cliente: '/dashboard-cliente',
+      instructor: '/calendario-instructor',
+      admin: '/gestion-clientes',
+      guest: '/'
+    }
+    next(dashboards[userRole])
+    return
+  }
+
+  // CASO 2: Ruta requiere autenticación
+  if (requiresAuth && !isAuthenticated) {
+    console.log('🚫 Acceso denegado: No estás autenticado')
+    next('/login')
+    return
+  }
+
+  // CASO 3: Verificar si el rol tiene permiso
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    console.log(`🚫 Acceso denegado: Rol ${userRole} no permitido para esta ruta`)
+    
+    // Redirigir al dashboard correspondiente según el rol
+    const dashboards = {
+      cliente: '/dashboard-cliente',
+      instructor: '/calendario-instructor',
+      admin: '/gestion-clientes',
+      guest: '/login'
+    }
+    
+    next(dashboards[userRole])
+    return
+  }
+
+  // CASO 4: Todo está bien, permitir acceso
+  console.log(`✅ Acceso permitido a ${to.path} (rol: ${userRole})`)
+  next()
 })
 
 export default router
