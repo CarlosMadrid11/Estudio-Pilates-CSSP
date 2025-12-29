@@ -66,6 +66,14 @@
           >
           <p v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</p>
 
+          <!-- PANEL DE DEBUG -->
+          <div v-if="debugLogs.length > 0" class="debug-panel">
+            <h4>🔍 Debug Logs:</h4>
+            <div class="debug-log" v-for="(log, index) in debugLogs" :key="index">
+              <span :class="log.type">{{ log.message }}</span>
+            </div>
+          </div>
+
           <button 
             @click="registrarUsuario" 
             class="btn"
@@ -91,7 +99,19 @@ import { supabase } from '@/lib/supabase'
 
 const router = useRouter()
 
-// Schema de validación con Zod
+// Debug logs
+interface DebugLog {
+  type: 'info' | 'success' | 'error' | 'warning'
+  message: string
+}
+const debugLogs = ref<DebugLog[]>([])
+
+const addLog = (type: DebugLog['type'], message: string) => {
+  debugLogs.value.push({ type, message })
+  console.log(`[${type.toUpperCase()}] ${message}`)
+}
+
+// Schema de validación
 const registroSchema = z.object({
   nombreCompleto: z.string()
     .min(3, 'El nombre debe tener al menos 3 caracteres')
@@ -143,7 +163,7 @@ const errors = reactive({
   confirmPassword: ''
 })
 
-// Función para validar un campo específico
+// Validar campo
 const validateField = (field: string) => {
   const data = {
     nombreCompleto: nombreCompleto.value.trim(),
@@ -171,16 +191,19 @@ const validateField = (field: string) => {
   }
 }
 
-// Función para limpiar errores
+// Limpiar errores
 const clearErrors = () => {
   Object.keys(errors).forEach(key => {
     errors[key as keyof typeof errors] = ''
   })
 }
 
-// Lógica para registrar usuario con Supabase (SIN TRIGGER)
+// REGISTRO CON DEBUG EXTREMO
 const registrarUsuario = async () => {
   clearErrors()
+  debugLogs.value = []
+  
+  addLog('info', '🚀 Iniciando proceso de registro...')
   
   const formData = {
     nombreCompleto: nombreCompleto.value.trim(),
@@ -190,28 +213,37 @@ const registrarUsuario = async () => {
     confirmPassword: confirmPassword.value
   }
 
-  // Validar todos los campos con Zod
+  addLog('info', `📧 Email: ${formData.email}`)
+  addLog('info', `👤 Nombre: ${formData.nombreCompleto}`)
+
+  // Validar
   const validationResult = registroSchema.safeParse(formData)
   
   if (!validationResult.success) {
+    addLog('error', '❌ Validación falló')
     const zodErrors = validationResult.error.issues
     zodErrors.forEach((err) => {
       const field = err.path[0] as keyof typeof errors
       if (field in errors) {
         errors[field] = err.message
+        addLog('error', `❌ ${field}: ${err.message}`)
       }
     })
     alert('Por favor corrige los errores en el formulario')
     return
   }
 
+  addLog('success', '✅ Validación correcta')
+
   const validatedData = validationResult.data
   isLoading.value = true
 
   try {
-    console.log('🚀 Iniciando registro (sin trigger)...')
-    
+    // ============================================
     // PASO 1: Crear usuario en Supabase Auth
+    // ============================================
+    addLog('info', '📝 Paso 1: Creando usuario en auth.users...')
+    
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: validatedData.email,
       password: validatedData.password,
@@ -224,42 +256,79 @@ const registrarUsuario = async () => {
       }
     })
 
-    console.log('✅ Auth Data:', authData)
+    addLog('info', `🔍 Auth Data: ${JSON.stringify(authData, null, 2)}`)
+    addLog('info', `🔍 Auth Error: ${JSON.stringify(authError, null, 2)}`)
 
     if (authError) {
+      addLog('error', `❌ Error en auth: ${authError.message}`)
       throw new Error(authError.message)
     }
 
     if (!authData.user) {
+      addLog('error', '❌ No se recibió usuario de auth')
       throw new Error('No se pudo crear el usuario en auth.users')
     }
 
     const userId = authData.user.id
-    console.log('✅ Usuario creado con ID:', userId)
+    addLog('success', `✅ Usuario creado con ID: ${userId}`)
 
-    // PASO 2: Crear profile MANUALMENTE (no esperamos el trigger)
-    console.log('📝 Creando profile manualmente...')
+    // ============================================
+    // PASO 2: Verificar/Crear profile
+    // ============================================
+    addLog('info', '📝 Paso 2: Verificando profile...')
     
-    const { data: profileData, error: profileError } = await supabase
+    // Esperar un poco por el trigger
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    const { data: existingProfile, error: checkProfileError } = await supabase
       .from('profiles')
-      .insert({
-        id: userId,
-        nombre_completo: validatedData.nombreCompleto,
-        telefono: validatedData.telefono,
-        rol: 'cliente'
-      })
-      .select()
-      .single()
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
 
-    if (profileError) {
-      console.error('❌ Error al crear profile:', profileError)
-      throw new Error(`Error al crear profile: ${profileError.message}`)
+    addLog('info', `🔍 Profile existente: ${JSON.stringify(existingProfile, null, 2)}`)
+    addLog('info', `🔍 Error al verificar: ${JSON.stringify(checkProfileError, null, 2)}`)
+
+    if (existingProfile) {
+      addLog('success', '✅ Profile ya existe (trigger funcionó)')
+    } else {
+      addLog('warning', '⚠️ Profile no existe, creándolo manualmente...')
+      
+      const { data: newProfile, error: createProfileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          nombre_completo: validatedData.nombreCompleto,
+          telefono: validatedData.telefono,
+          rol: 'cliente'
+        })
+        .select()
+        .single()
+
+      addLog('info', `🔍 Nuevo profile: ${JSON.stringify(newProfile, null, 2)}`)
+      addLog('info', `🔍 Error al crear: ${JSON.stringify(createProfileError, null, 2)}`)
+
+      if (createProfileError) {
+        addLog('error', `❌ Error al crear profile: ${createProfileError.message}`)
+        throw new Error(`Error al crear profile: ${createProfileError.message}`)
+      }
+
+      addLog('success', '✅ Profile creado manualmente')
     }
 
-    console.log('✅ Profile creado:', profileData)
-
-    // PASO 3: Crear registro en tabla clientes
-    console.log('📝 Creando cliente...')
+    // ============================================
+    // PASO 3: Crear cliente
+    // ============================================
+    addLog('info', '📝 Paso 3: Creando registro en clientes...')
+    addLog('info', `🔍 Usando profile_id: ${userId}`)
+    
+    // Verificar sesión actual
+    const { data: { session } } = await supabase.auth.getSession()
+    addLog('info', `🔍 Sesión actual: ${session ? 'Existe' : 'No existe'}`)
+    if (session) {
+      addLog('info', `🔍 Session user ID: ${session.user.id}`)
+      addLog('info', `🔍 ¿Session user = profile_id?: ${session.user.id === userId}`)
+    }
     
     const { data: clienteData, error: clienteError } = await supabase
       .from('clientes')
@@ -270,15 +339,34 @@ const registrarUsuario = async () => {
       .select()
       .single()
 
+    addLog('info', `🔍 Cliente Data: ${JSON.stringify(clienteData, null, 2)}`)
+    addLog('info', `🔍 Cliente Error: ${JSON.stringify(clienteError, null, 2)}`)
+
     if (clienteError) {
-      console.error('❌ Error al crear cliente:', clienteError)
-      throw new Error(`Error al crear cliente: ${clienteError.message}`)
+      addLog('error', `❌ ERROR AL CREAR CLIENTE: ${clienteError.message}`)
+      addLog('error', `❌ Code: ${clienteError.code}`)
+      addLog('error', `❌ Details: ${clienteError.details}`)
+      addLog('error', `❌ Hint: ${clienteError.hint}`)
+      
+      // No hacer throw, mostrar el error pero continuar
+      alert(`⚠️ Usuario creado pero con problema en cliente:\n${clienteError.message}\n\nPuedes iniciar sesión de todos modos.`)
+      router.push('/login')
+      return
     }
 
-    console.log('✅ Cliente creado:', clienteData)
+    if (!clienteData) {
+      addLog('error', '❌ No se devolvió data del cliente')
+      alert('⚠️ Usuario creado pero sin confirmar cliente. Intenta iniciar sesión.')
+      router.push('/login')
+      return
+    }
 
-    // PASO 4: Éxito total
-    console.log('✅✅✅ REGISTRO COMPLETO')
+    addLog('success', `✅ Cliente creado con ID: ${clienteData.id}`)
+
+    // ============================================
+    // PASO 4: ÉXITO TOTAL
+    // ============================================
+    addLog('success', '✅✅✅ REGISTRO COMPLETO')
     alert(`¡Registro exitoso! Bienvenido ${validatedData.nombreCompleto}. Ahora puedes iniciar sesión.`)
     
     // Limpiar formulario
@@ -288,11 +376,11 @@ const registrarUsuario = async () => {
     password.value = ''
     confirmPassword.value = ''
     
-    // Redirigir al login
+    // Redirigir
     router.push('/login')
 
   } catch (error: unknown) {
-    console.error('❌ Error en el registro:', error)
+    addLog('error', `❌❌❌ ERROR GENERAL: ${error}`)
     
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
     
@@ -300,11 +388,8 @@ const registrarUsuario = async () => {
       errors.email = 'Este correo ya está registrado'
       alert('Este correo ya está registrado. Intenta iniciar sesión.')
     } else if (errorMessage.includes('duplicate key') || errorMessage.includes('unique')) {
-      errors.email = 'Este correo ya existe en el sistema'
-      alert('Este correo ya está registrado. Intenta con otro correo.')
-    } else if (errorMessage.includes('email')) {
-      errors.email = 'Error con el correo electrónico'
-      alert(`Error: ${errorMessage}`)
+      errors.email = 'Este correo ya existe'
+      alert('Este correo ya está registrado.')
     } else {
       alert(`Error al registrar: ${errorMessage}`)
     }
@@ -332,7 +417,7 @@ const registrarUsuario = async () => {
 }
 
 .form-box {
-  width: 400px;
+  width: 450px;
   padding: 40px 40px 60px 40px;
   background: #3d3d3d;
   border: 2px solid #000;
@@ -395,6 +480,45 @@ h3 {
   min-height: 18px;
 }
 
+.debug-panel {
+  background: #1a1a1a;
+  border: 2px solid #49a7ff;
+  border-radius: 4px;
+  padding: 15px;
+  margin: 20px 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.debug-panel h4 {
+  margin: 0 0 10px 0;
+  color: #49a7ff;
+  font-size: 14px;
+}
+
+.debug-log {
+  font-size: 11px;
+  margin-bottom: 5px;
+  font-family: monospace;
+}
+
+.debug-log .info {
+  color: #66b3ff;
+}
+
+.debug-log .success {
+  color: #4caf50;
+}
+
+.debug-log .error {
+  color: #ff6b6b;
+  font-weight: bold;
+}
+
+.debug-log .warning {
+  color: #ffa726;
+}
+
 .btn {
   width: 60%;
   display: block;
@@ -446,7 +570,7 @@ h3 {
 @media (max-width: 500px) {
   .form-box {
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
     padding: 30px 20px 40px 20px;
   }
   
