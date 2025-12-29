@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { supabase } from '@/lib/supabase'
 
 export type UserRole = 'guest' | 'cliente' | 'instructor' | 'admin'
 
@@ -14,6 +15,7 @@ interface AuthState {
   user: User | null
   role: UserRole
   isAuthenticated: boolean
+  isInitialized: boolean // ← NUEVO: para evitar loops
 }
 
 const STORAGE_KEY = 'cssp_auth_session'
@@ -22,38 +24,216 @@ export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
     role: 'guest',
-    isAuthenticated: false
+    isAuthenticated: false,
+    isInitialized: false
   }),
 
   getters: {
-    // Verificadores de rol
     isGuest: (state) => state.role === 'guest',
     isCliente: (state) => state.role === 'cliente',
     isInstructor: (state) => state.role === 'instructor',
     isAdmin: (state) => state.role === 'admin',
-
-    // Información del usuario
     userName: (state) => state.user?.nombre || 'Invitado',
     userEmail: (state) => state.user?.email || '',
     userId: (state) => state.user?.id || '',
-
-    // Verificador de autenticación
     hasAccess: (state) => (requiredRole: UserRole) => {
       if (!state.isAuthenticated) return false
       if (requiredRole === 'guest') return true
-      
-      // Admin tiene acceso a todo
       if (state.role === 'admin') return true
-      
-      // Verificar rol específico
       return state.role === requiredRole
     }
   },
 
   actions: {
     /**
-     * Login Mock para desarrollo
-     * Simula un login con diferentes roles
+     * Login con Supabase Auth
+     */
+    async login(email: string, password: string) {
+      try {
+        console.log('🔐 Login:', email)
+
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password: password
+        })
+
+        if (authError) throw new Error(authError.message)
+        if (!authData.user) throw new Error('No se recibió información del usuario')
+
+        console.log('✅ Auth OK:', authData.user.id)
+
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single()
+
+        if (profileError || !profileData) {
+          throw new Error('No se encontró el perfil del usuario')
+        }
+
+        console.log('✅ Profile OK')
+
+        const user: User = {
+          id: authData.user.id,
+          email: authData.user.email || email,
+          nombre: profileData.nombre_completo,
+          telefono: profileData.telefono,
+          role: profileData.rol as UserRole
+        }
+
+        this.setUser(user)
+        console.log('✅✅✅ LOGIN COMPLETO')
+        
+        return { success: true, user }
+
+      } catch (error) {
+        console.error('❌ Error login:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+        return { success: false, error: errorMessage }
+      }
+    },
+
+    /**
+     * Logout
+     */
+    async logout() {
+      try {
+        console.log('🚪 Logout...')
+        await supabase.auth.signOut()
+      } catch (error) {
+        console.error('❌ Error logout:', error)
+      } finally {
+        this.user = null
+        this.role = 'guest'
+        this.isAuthenticated = false
+        this.clearSession()
+        console.log('✅ Sesión cerrada')
+      }
+    },
+
+    /**
+     * Establecer usuario
+     */
+    setUser(user: User) {
+      this.user = user
+      this.role = user.role
+      this.isAuthenticated = true
+      this.saveSession()
+    },
+
+    /**
+     * Recuperar sesión de Supabase (solo una vez)
+     */
+    async restoreSession() {
+      // ✅ IMPORTANTE: Evitar llamadas múltiples
+      if (this.isInitialized) {
+        console.log('ℹ️ Store ya inicializado, saltando...')
+        return this.isAuthenticated
+      }
+
+      try {
+        console.log('🔄 Restaurando sesión...')
+
+        const { data: { session }, error } = await supabase.auth.getSession()
+
+        if (error || !session) {
+          console.log('ℹ️ No hay sesión activa')
+          this.isInitialized = true
+          return false
+        }
+
+        console.log('✅ Sesión encontrada')
+
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+
+        if (profileError || !profileData) {
+          console.error('❌ Error profile:', profileError)
+          await this.logout()
+          this.isInitialized = true
+          return false
+        }
+
+        const user: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          nombre: profileData.nombre_completo,
+          telefono: profileData.telefono,
+          role: profileData.rol as UserRole
+        }
+
+        this.setUser(user)
+        this.isInitialized = true
+        console.log('✅ Sesión restaurada:', user.email)
+        
+        return true
+
+      } catch (error) {
+        console.error('❌ Error restaurar sesión:', error)
+        await this.logout()
+        this.isInitialized = true
+        return false
+      }
+    },
+
+    /**
+     * Guardar en localStorage (backup)
+     */
+    saveSession() {
+      try {
+        const sessionData = {
+          user: this.user,
+          role: this.role,
+          isAuthenticated: this.isAuthenticated,
+          timestamp: Date.now()
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData))
+      } catch (error) {
+        console.error('Error guardar sesión:', error)
+      }
+    },
+
+    /**
+     * Limpiar localStorage
+     */
+    clearSession() {
+      try {
+        localStorage.removeItem(STORAGE_KEY)
+      } catch (error) {
+        console.error('Error limpiar sesión:', error)
+      }
+    },
+
+    /**
+     * Inicializar store (llamar SOLO UNA VEZ en App.vue)
+     */
+    async init() {
+      console.log('🚀 Init Auth Store...')
+      
+      // ✅ SOLO restaurar sesión una vez
+      await this.restoreSession()
+
+      // ✅ Listener SIN llamar restoreSession (evita loops)
+      supabase.auth.onAuthStateChange((event, session) => {
+        console.log('🔔 Auth state change:', event)
+        
+        // NO llamar restoreSession aquí, solo actualizar estado básico
+        if (event === 'SIGNED_OUT') {
+          this.user = null
+          this.role = 'guest'
+          this.isAuthenticated = false
+          this.clearSession()
+        }
+        // Para SIGNED_IN, el login() ya maneja el estado
+      })
+    },
+
+    /**
+     * Login Mock (mantener para desarrollo)
      */
     loginMock(role: UserRole) {
       if (role === 'guest') {
@@ -89,97 +269,6 @@ export const useAuthStore = defineStore('auth', {
       if (user) {
         this.setUser(user)
       }
-    },
-
-    /**
-     * Establecer usuario autenticado
-     */
-    setUser(user: User) {
-      this.user = user
-      this.role = user.role
-      this.isAuthenticated = true
-      
-      // Guardar en localStorage
-      this.saveSession()
-    },
-
-    /**
-     * Cerrar sesión
-     */
-    logout() {
-      this.user = null
-      this.role = 'guest'
-      this.isAuthenticated = false
-      
-      // Limpiar localStorage
-      this.clearSession()
-    },
-
-    /**
-     * Guardar sesión en localStorage
-     */
-    saveSession() {
-      try {
-        const sessionData = {
-          user: this.user,
-          role: this.role,
-          isAuthenticated: this.isAuthenticated,
-          timestamp: Date.now()
-        }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData))
-      } catch (error) {
-        console.error('Error al guardar sesión:', error)
-      }
-    },
-
-    /**
-     * Recuperar sesión desde localStorage
-     */
-    loadSession() {
-      try {
-        const sessionData = localStorage.getItem(STORAGE_KEY)
-        if (!sessionData) return false
-
-        const parsed = JSON.parse(sessionData)
-        
-        // Verificar que la sesión no tenga más de 7 días
-        const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000
-        const isExpired = Date.now() - parsed.timestamp > SEVEN_DAYS
-        
-        if (isExpired) {
-          this.clearSession()
-          return false
-        }
-
-        // Restaurar sesión
-        this.user = parsed.user
-        this.role = parsed.role
-        this.isAuthenticated = parsed.isAuthenticated
-
-        return true
-      } catch (error) {
-        console.error('Error al cargar sesión:', error)
-        this.clearSession()
-        return false
-      }
-    },
-
-    /**
-     * Limpiar sesión del localStorage
-     */
-    clearSession() {
-      try {
-        localStorage.removeItem(STORAGE_KEY)
-      } catch (error) {
-        console.error('Error al limpiar sesión:', error)
-      }
-    },
-
-    /**
-     * Inicializar store (llamar al iniciar la app)
-     */
-    init() {
-      this.loadSession()
     }
   }
 })
