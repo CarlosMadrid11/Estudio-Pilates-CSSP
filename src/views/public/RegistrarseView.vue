@@ -1,9 +1,9 @@
 <template> 
-<!-- Los errores se van a arreglar cuando se implemente la validación de supabase -->
   <div>
     <div class="registro-view">
       <div class="login-container">
         <div class="form-box">
+          <h2 class="title">Crear Cuenta</h2>
           
           <h3>Nombre Completo</h3>
           <input 
@@ -13,6 +13,7 @@
             :class="{ 'error': errors.nombreCompleto }"
             placeholder="Ingresa tu nombre completo"
             @blur="validateField('nombreCompleto')"
+            :disabled="isLoading"
           >
           <p v-if="errors.nombreCompleto" class="error-message">{{ errors.nombreCompleto }}</p>
 
@@ -25,6 +26,7 @@
             placeholder="Ej: 6671234567"
             maxlength="15"
             @blur="validateField('telefono')"
+            :disabled="isLoading"
           >
           <p v-if="errors.telefono" class="error-message">{{ errors.telefono }}</p>
 
@@ -36,19 +38,9 @@
             :class="{ 'error': errors.email }"
             placeholder="ejemplo@correo.com"
             @blur="validateField('email')"
+            :disabled="isLoading"
           >
           <p v-if="errors.email" class="error-message">{{ errors.email }}</p>
-
-          <h3>Usuario</h3>
-          <input 
-            v-model="usuario" 
-            type="text" 
-            class="input-field" 
-            :class="{ 'error': errors.usuario }"
-            placeholder="Elige un nombre de usuario"
-            @blur="validateField('usuario')"
-          >
-          <p v-if="errors.usuario" class="error-message">{{ errors.usuario }}</p>
 
           <h3>Contraseña</h3>
           <input 
@@ -58,6 +50,7 @@
             :class="{ 'error': errors.password }"
             placeholder="Mínimo 8 caracteres"
             @blur="validateField('password')"
+            :disabled="isLoading"
           >
           <p v-if="errors.password" class="error-message">{{ errors.password }}</p>
           
@@ -69,6 +62,7 @@
             :class="{ 'error': errors.confirmPassword }"
             placeholder="Repite la contraseña"
             @blur="validateField('confirmPassword')"
+            :disabled="isLoading"
           >
           <p v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</p>
 
@@ -90,79 +84,38 @@
 </template>
 
 <script setup lang="ts">
-
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
-
+import { supabase } from '@/lib/supabase'
 
 const router = useRouter()
 
-// Schema de validación mejorado con Zod
+// Schema de validación con Zod (SIMPLIFICADO - sin campo usuario)
 const registroSchema = z.object({
   nombreCompleto: z.string()
     .min(3, 'El nombre debe tener al menos 3 caracteres')
     .max(100, 'El nombre no puede exceder 100 caracteres')
     .regex(
       /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/, 
-      'El nombre solo puede contener letras y espacios (sin caracteres especiales)'
-    )
-    .refine(
-      (val) => val.trim().length >= 3,
-      'El nombre no puede ser solo espacios'
+      'El nombre solo puede contener letras y espacios'
     ),
   
   telefono: z.string()
     .min(10, 'El teléfono debe tener al menos 10 dígitos')
     .max(15, 'El teléfono no puede exceder 15 dígitos')
-    .regex(/^\d+$/, 'El teléfono solo debe contener números')
-    .refine(
-      (val) => !val.startsWith('0'),
-      'El teléfono no puede comenzar con 0'
-    ),
+    .regex(/^\d+$/, 'El teléfono solo debe contener números'),
   
   email: z.string()
-    .min(5, 'El correo es demasiado corto')
-    .max(100, 'El correo es demasiado largo')
-    .email('Correo electrónico inválido (debe contener @ y un dominio válido)')
-    .regex(
-      /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-      'Formato de correo inválido'
-    )
-    .refine(
-      (val) => !val.includes('..'),
-      'El correo no puede contener puntos consecutivos'
-    )
+    .email('Correo electrónico inválido')
     .toLowerCase()
     .transform((val) => val.trim()),
   
-  usuario: z.string()
-    .min(4, 'El usuario debe tener al menos 4 caracteres')
-    .max(30, 'El usuario no puede exceder 30 caracteres')
-    .regex(
-      /^[a-zA-Z0-9_]+$/, 
-      'El usuario solo puede contener letras, números y guiones bajos'
-    )
-    .refine(
-      (val) => !/^\d+$/.test(val),
-      'El usuario no puede ser solo números'
-    )
-    .toLowerCase(),
-  
   password: z.string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
-    .max(100, 'La contraseña es demasiado larga')
     .regex(/[A-Z]/, 'Debe contener al menos una letra mayúscula')
     .regex(/[a-z]/, 'Debe contener al menos una letra minúscula')
-    .regex(/[0-9]/, 'Debe contener al menos un número')
-    .regex(
-      /[!@#$%^&*(),.?":{}|<>]/,
-      'Debe contener al menos un carácter especial (!@#$%^&*...)'
-    )
-    .refine(
-      (val) => !/\s/.test(val),
-      'La contraseña no puede contener espacios'
-    ),
+    .regex(/[0-9]/, 'Debe contener al menos un número'),
   
   confirmPassword: z.string()
 }).refine(
@@ -177,7 +130,6 @@ const registroSchema = z.object({
 const nombreCompleto = ref('')
 const telefono = ref('')
 const email = ref('')
-const usuario = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const isLoading = ref(false)
@@ -187,7 +139,6 @@ const errors = reactive({
   nombreCompleto: '',
   telefono: '',
   email: '',
-  usuario: '',
   password: '',
   confirmPassword: ''
 })
@@ -198,7 +149,6 @@ const validateField = (field: string) => {
     nombreCompleto: nombreCompleto.value.trim(),
     telefono: telefono.value.trim(),
     email: email.value.trim(),
-    usuario: usuario.value.trim(),
     password: password.value,
     confirmPassword: confirmPassword.value
   }
@@ -206,9 +156,13 @@ const validateField = (field: string) => {
   try {
     registroSchema.parse(data)
     errors[field as keyof typeof errors] = ''
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const fieldError = error.errors.find(err => err.path[0] === field)
+  } catch (e) {
+    // Verificación de tipo más robusta
+    if (e && typeof e === 'object' && 'errors' in e) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const zodErrors = (e as any).errors
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fieldError = zodErrors.find((err: any) => err.path[0] === field)
       if (fieldError) {
         errors[field as keyof typeof errors] = fieldError.message
       } else {
@@ -225,7 +179,7 @@ const clearErrors = () => {
   })
 }
 
-// Lógica para registrar usuario
+// Lógica para registrar usuario con Supabase
 const registrarUsuario = async () => {
   clearErrors()
   
@@ -233,7 +187,6 @@ const registrarUsuario = async () => {
     nombreCompleto: nombreCompleto.value.trim(),
     telefono: telefono.value.trim(),
     email: email.value.trim(),
-    usuario: usuario.value.trim(),
     password: password.value,
     confirmPassword: confirmPassword.value
   }
@@ -242,9 +195,13 @@ const registrarUsuario = async () => {
   let validatedData
   try {
     validatedData = registroSchema.parse(formData)
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      error.errors.forEach(err => {
+  } catch (e) {
+    // Verificación de tipo más robusta
+    if (e && typeof e === 'object' && 'errors' in e) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const zodErrors = (e as any).errors
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      zodErrors.forEach((err: any) => {
         const field = err.path[0] as keyof typeof errors
         errors[field] = err.message
       })
@@ -256,45 +213,62 @@ const registrarUsuario = async () => {
   isLoading.value = true
 
   try {
-    // 1. Crear usuario en Supabase Auth
+    // PASO 1: Crear usuario en Supabase Auth
+    // Enviamos nombre y teléfono en raw_user_meta_data para que el trigger los use
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: validatedData.email,
-      password: validatedData.password
+      password: validatedData.password,
+      options: {
+        data: {
+          nombre_completo: validatedData.nombreCompleto,
+          telefono: validatedData.telefono,
+          rol: 'cliente'
+        }
+      }
     })
 
     if (authError) {
       throw new Error(authError.message)
     }
 
-    // 2. Insertar datos del cliente en la tabla 'cliente'
-    const { error: insertError } = await supabase
-      .from('cliente')
-      .insert([
-        {
-          nombre_completo: validatedData.nombreCompleto,
-          telefono: validatedData.telefono,
-          correo: validatedData.email,
-          usuario: validatedData.usuario,
-          user_id: authData.user?.id
-        }
-      ])
-
-    if (insertError) {
-      throw new Error(insertError.message)
+    if (!authData.user) {
+      throw new Error('No se pudo crear el usuario')
     }
 
-    alert(`¡Registro exitoso! Hemos enviado un correo de verificación a ${validatedData.email}`)
+    // PASO 2: Crear registro en tabla clientes
+    // El trigger ya creó el profile, ahora creamos el cliente
+    const { error: clienteError } = await supabase
+      .from('clientes')
+      .insert({
+        profile_id: authData.user.id,
+        direccion: null // Por ahora sin dirección
+      })
+
+    if (clienteError) {
+      console.error('Error al crear cliente:', clienteError)
+      // No lanzamos error aquí porque el usuario ya se creó en auth
+      // Solo logueamos el error
+    }
+
+    // PASO 3: Éxito
+    alert(`¡Registro exitoso! Bienvenido ${validatedData.nombreCompleto}`)
     router.push('/login')
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error en el registro:', error)
     
-    if (error.message.includes('already registered') || error.message.includes('already exists')) {
+    // Verificar que el error tiene una propiedad message
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+    
+    // Manejar errores específicos
+    if (errorMessage.includes('already registered') || errorMessage.includes('User already registered')) {
       errors.email = 'Este correo ya está registrado'
-    } else if (error.message.includes('user_already_exists')) {
-      errors.usuario = 'Este usuario ya existe'
+      alert('Este correo ya está registrado. Intenta iniciar sesión.')
+    } else if (errorMessage.includes('email')) {
+      errors.email = 'Error con el correo electrónico'
+      alert(`Error: ${errorMessage}`)
     } else {
-      alert(`Error al registrar: ${error.message}`)
+      alert(`Error al registrar: ${errorMessage}`)
     }
   } finally {
     isLoading.value = false
@@ -330,6 +304,14 @@ const registrarUsuario = async () => {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
+.title {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 24px;
+  font-weight: 600;
+  color: white;
+}
+
 h3 {
   font-weight: normal;
   margin-bottom: 8px;
@@ -361,6 +343,11 @@ h3 {
   outline: none;
   background: #404040;
   border-color: #49a7ff;
+}
+
+.input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .error-message {
