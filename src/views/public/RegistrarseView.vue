@@ -180,6 +180,7 @@ const clearErrors = () => {
 }
 
 // Lógica para registrar usuario con Supabase
+// Lógica para registrar usuario con Supabase
 const registrarUsuario = async () => {
   clearErrors()
   
@@ -192,35 +193,26 @@ const registrarUsuario = async () => {
   }
 
   // Validar todos los campos con Zod
-  let validatedData
-  try {
-    validatedData = registroSchema.parse(formData)
-  } catch (e) {
-    // Verificación de tipo más robusta
-    if (e && typeof e === 'object' && 'errors' in e) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const zodErrors = (e as any).errors
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      zodErrors.forEach((err: any) => {
-        const field = err.path[0] as keyof typeof errors
+  const validationResult = registroSchema.safeParse(formData)
+  
+  if (!validationResult.success) {
+    // Si la validación falla, mostrar errores
+    validationResult.error.errors.forEach((err) => {
+      const field = err.path[0] as keyof typeof errors
+      if (field in errors) {
         errors[field] = err.message
-      })
-      alert('Por favor corrige los errores en el formulario')
-    }
-    return // Salir si hay errores de validación
-  }
-
-  // Verificación adicional de seguridad
-  if (!validatedData) {
-    alert('Error en la validación del formulario')
+      }
+    })
+    alert('Por favor corrige los errores en el formulario')
     return
   }
 
+  // Ahora sí tenemos los datos validados
+  const validatedData = validationResult.data
   isLoading.value = true
 
   try {
     // PASO 1: Crear usuario en Supabase Auth
-    // Enviamos nombre y teléfono en raw_user_meta_data para que el trigger los use
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: validatedData.email,
       password: validatedData.password,
@@ -242,18 +234,15 @@ const registrarUsuario = async () => {
     }
 
     // PASO 2: Crear registro en tabla clientes
-    // El trigger ya creó el profile, ahora creamos el cliente
     const { error: clienteError } = await supabase
       .from('clientes')
       .insert({
         profile_id: authData.user.id,
-        direccion: null // Por ahora sin dirección
+        direccion: null
       })
 
     if (clienteError) {
       console.error('Error al crear cliente:', clienteError)
-      // No lanzamos error aquí porque el usuario ya se creó en auth
-      // Solo logueamos el error
     }
 
     // PASO 3: Éxito
@@ -263,10 +252,8 @@ const registrarUsuario = async () => {
   } catch (error: unknown) {
     console.error('Error en el registro:', error)
     
-    // Verificar que el error tiene una propiedad message
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
     
-    // Manejar errores específicos
     if (errorMessage.includes('already registered') || errorMessage.includes('User already registered')) {
       errors.email = 'Este correo ya está registrado'
       alert('Este correo ya está registrado. Intenta iniciar sesión.')
