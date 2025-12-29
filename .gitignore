@@ -41,3 +41,4 @@ __screenshots__/
 .env.d.ts
 tsconfig.node.json
 
+.env
