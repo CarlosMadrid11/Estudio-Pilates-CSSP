@@ -66,12 +66,6 @@
           >
           <p v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</p>
 
-          <!-- PANEL DE DEBUG (Temporal) -->
-          <div v-if="debugInfo" class="debug-panel">
-            <h4>🔍 Debug Info:</h4>
-            <pre>{{ debugInfo }}</pre>
-          </div>
-
           <button 
             @click="registrarUsuario" 
             class="btn"
@@ -96,9 +90,6 @@ import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 
 const router = useRouter()
-
-// DEBUG temporal
-const debugInfo = ref<string>('')
 
 // Schema de validación con Zod
 const registroSchema = z.object({
@@ -187,10 +178,9 @@ const clearErrors = () => {
   })
 }
 
-// Lógica para registrar usuario con Supabase
+// Lógica para registrar usuario con Supabase (SIN TRIGGER)
 const registrarUsuario = async () => {
   clearErrors()
-  debugInfo.value = ''
   
   const formData = {
     nombreCompleto: nombreCompleto.value.trim(),
@@ -200,7 +190,7 @@ const registrarUsuario = async () => {
     confirmPassword: confirmPassword.value
   }
 
-  // Validar todos los campos con Zod usando safeParse
+  // Validar todos los campos con Zod
   const validationResult = registroSchema.safeParse(formData)
   
   if (!validationResult.success) {
@@ -219,7 +209,7 @@ const registrarUsuario = async () => {
   isLoading.value = true
 
   try {
-    console.log('🚀 Iniciando registro...')
+    console.log('🚀 Iniciando registro (sin trigger)...')
     
     // PASO 1: Crear usuario en Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -235,7 +225,6 @@ const registrarUsuario = async () => {
     })
 
     console.log('✅ Auth Data:', authData)
-    console.log('❌ Auth Error:', authError)
 
     if (authError) {
       throw new Error(authError.message)
@@ -245,56 +234,61 @@ const registrarUsuario = async () => {
       throw new Error('No se pudo crear el usuario en auth.users')
     }
 
-    console.log('✅ Usuario creado en auth.users con ID:', authData.user.id)
+    const userId = authData.user.id
+    console.log('✅ Usuario creado con ID:', userId)
 
-    // ESPERAR un momento para que el trigger cree el profile
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    // PASO 2: Verificar que se creó el profile
+    // PASO 2: Crear profile MANUALMENTE (no esperamos el trigger)
+    console.log('📝 Creando profile manualmente...')
+    
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
-      .eq('id', authData.user.id)
+      .insert({
+        id: userId,
+        nombre_completo: validatedData.nombreCompleto,
+        telefono: validatedData.telefono,
+        rol: 'cliente'
+      })
+      .select()
       .single()
 
-    console.log('✅ Profile Data:', profileData)
-    console.log('❌ Profile Error:', profileError)
-
-    if (profileError || !profileData) {
-      throw new Error('El profile no se creó automáticamente. Verifica el trigger.')
+    if (profileError) {
+      console.error('❌ Error al crear profile:', profileError)
+      throw new Error(`Error al crear profile: ${profileError.message}`)
     }
 
-    console.log('✅ Profile verificado correctamente')
+    console.log('✅ Profile creado:', profileData)
 
     // PASO 3: Crear registro en tabla clientes
-    // IMPORTANTE: Usamos el ID del profile, no del auth.user
+    console.log('📝 Creando cliente...')
+    
     const { data: clienteData, error: clienteError } = await supabase
       .from('clientes')
       .insert({
-        profile_id: profileData.id,
+        profile_id: userId,
         direccion: null
       })
       .select()
       .single()
 
-    console.log('✅ Cliente Data:', clienteData)
-    console.log('❌ Cliente Error:', clienteError)
-
     if (clienteError) {
       console.error('❌ Error al crear cliente:', clienteError)
-      // Mostrar error específico
-      debugInfo.value = `Error en clientes: ${JSON.stringify(clienteError, null, 2)}`
-      throw new Error(`No se pudo crear el registro de cliente: ${clienteError.message}`)
+      throw new Error(`Error al crear cliente: ${clienteError.message}`)
     }
 
-    if (!clienteData) {
-      throw new Error('No se devolvió data del cliente creado')
-    }
-
-    console.log('✅ Cliente creado exitosamente con ID:', clienteData.id)
+    console.log('✅ Cliente creado:', clienteData)
 
     // PASO 4: Éxito total
+    console.log('✅✅✅ REGISTRO COMPLETO')
     alert(`¡Registro exitoso! Bienvenido ${validatedData.nombreCompleto}. Ahora puedes iniciar sesión.`)
+    
+    // Limpiar formulario
+    nombreCompleto.value = ''
+    telefono.value = ''
+    email.value = ''
+    password.value = ''
+    confirmPassword.value = ''
+    
+    // Redirigir al login
     router.push('/login')
 
   } catch (error: unknown) {
@@ -305,12 +299,14 @@ const registrarUsuario = async () => {
     if (errorMessage.includes('already registered') || errorMessage.includes('User already registered')) {
       errors.email = 'Este correo ya está registrado'
       alert('Este correo ya está registrado. Intenta iniciar sesión.')
+    } else if (errorMessage.includes('duplicate key') || errorMessage.includes('unique')) {
+      errors.email = 'Este correo ya existe en el sistema'
+      alert('Este correo ya está registrado. Intenta con otro correo.')
     } else if (errorMessage.includes('email')) {
       errors.email = 'Error con el correo electrónico'
       alert(`Error: ${errorMessage}`)
     } else {
       alert(`Error al registrar: ${errorMessage}`)
-      debugInfo.value = errorMessage
     }
   } finally {
     isLoading.value = false
@@ -397,31 +393,6 @@ h3 {
   font-size: 12px;
   margin: 0 0 15px 5px;
   min-height: 18px;
-}
-
-/* DEBUG PANEL */
-.debug-panel {
-  background: #1a1a1a;
-  border: 2px solid #ff6b6b;
-  border-radius: 4px;
-  padding: 15px;
-  margin: 20px 0;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.debug-panel h4 {
-  margin: 0 0 10px 0;
-  color: #ff6b6b;
-  font-size: 14px;
-}
-
-.debug-panel pre {
-  margin: 0;
-  font-size: 11px;
-  color: #fff;
-  white-space: pre-wrap;
-  word-wrap: break-word;
 }
 
 .btn {
