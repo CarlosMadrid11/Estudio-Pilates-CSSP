@@ -206,8 +206,14 @@ const registrarUsuario = async () => {
         errors[field] = err.message
       })
       alert('Por favor corrige los errores en el formulario')
-      return
     }
+    return // Salir si hay errores de validación
+  }
+
+  // Verificación adicional de seguridad
+  if (!validatedData) {
+    alert('Error en la validación del formulario')
+    return
   }
 
   isLoading.value = true
