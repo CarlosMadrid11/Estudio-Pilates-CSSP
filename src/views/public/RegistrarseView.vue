@@ -107,9 +107,9 @@ const registroSchema = z.object({
     .regex(/^\d+$/, 'El teléfono solo debe contener números'),
   
   email: z.string()
+    .min(5, 'El correo es demasiado corto')
     .email('Correo electrónico inválido')
-    .toLowerCase()
-    .transform((val) => val.trim()),
+    .transform((val) => val.trim().toLowerCase()),
   
   password: z.string()
     .min(8, 'La contraseña debe tener al menos 8 caracteres')
@@ -180,7 +180,6 @@ const clearErrors = () => {
 }
 
 // Lógica para registrar usuario con Supabase
-// Lógica para registrar usuario con Supabase
 const registrarUsuario = async () => {
   clearErrors()
   
@@ -192,12 +191,13 @@ const registrarUsuario = async () => {
     confirmPassword: confirmPassword.value
   }
 
-  // Validar todos los campos con Zod
+  // Validar todos los campos con Zod usando safeParse
   const validationResult = registroSchema.safeParse(formData)
   
   if (!validationResult.success) {
     // Si la validación falla, mostrar errores
-    validationResult.error.errors.forEach((err) => {
+    const zodErrors = validationResult.error.issues
+    zodErrors.forEach((err) => {
       const field = err.path[0] as keyof typeof errors
       if (field in errors) {
         errors[field] = err.message
