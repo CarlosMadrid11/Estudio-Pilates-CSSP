@@ -13,11 +13,11 @@
 
           <h3>Correo Electrónico</h3>
           <input 
-            v-model="usuario" 
-            type="text" 
+            v-model="email" 
+            type="email" 
             class="input-field"
             :class="{ 'error': hasError }"
-            placeholder="Introduce tu correo"
+            placeholder="ejemplo@correo.com"
             @keyup.enter="iniciarSesion"
             :disabled="isLoading"
           >
@@ -44,18 +44,6 @@
           <div class="link">
             ¿No tienes una cuenta? <router-link to="/registrarse">Regístrate aquí</router-link>
           </div>
-
-          <!-- Usuarios de prueba (temporal para desarrollo) -->
-          <div class="dev-info">
-            <details>
-              <summary>👨‍💻 Usuarios de prueba</summary>
-              <div class="test-users">
-                <p><strong>Cliente:</strong> cliente / cliente123</p>
-                <p><strong>Instructor:</strong> instructor / instructor123</p>
-                <p><strong>Admin:</strong> admin / admin123</p>
-              </div>
-            </details>
-          </div>
         </div>
       </div>
     </div>
@@ -66,36 +54,18 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { supabase } from '@/lib/supabase'
 import type { UserRole } from '@/stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 // Estado para el formulario
-const usuario = ref('')
+const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
 const hasError = ref(false)
 const isLoading = ref(false)
-
-// Usuarios mock para desarrollo
-const mockUsers = {
-  'cliente': {
-    password: 'cliente123',
-    role: 'cliente' as UserRole,
-    redirectTo: '/dashboard-cliente'
-  },
-  'instructor': {
-    password: 'instructor123',
-    role: 'instructor' as UserRole,
-    redirectTo: '/calendario-instructor'
-  },
-  'admin': {
-    password: 'admin123',
-    role: 'admin' as UserRole,
-    redirectTo: '/gestion-clientes'
-  }
-}
 
 const iniciarSesion = async () => {
   // Limpiar errores previos
@@ -103,7 +73,7 @@ const iniciarSesion = async () => {
   hasError.value = false
 
   // Validar campos vacíos
-  if (!usuario.value.trim() || !password.value.trim()) {
+  if (!email.value.trim() || !password.value.trim()) {
     errorMessage.value = 'Por favor completa todos los campos'
     hasError.value = true
     return
@@ -111,38 +81,70 @@ const iniciarSesion = async () => {
 
   isLoading.value = true
 
-  // Simular delay de red (opcional, para hacer más realista)
-  await new Promise(resolve => setTimeout(resolve, 500))
-
   try {
-    const userLower = usuario.value.toLowerCase().trim()
-    const mockUser = mockUsers[userLower as keyof typeof mockUsers]
+    // PASO 1: Autenticar con Supabase
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: email.value.trim(),
+      password: password.value
+    })
 
-    // Verificar si el usuario existe
-    if (!mockUser) {
-      errorMessage.value = 'Usuario no encontrado'
-      hasError.value = true
-      return
+    if (authError) {
+      throw new Error(authError.message)
     }
 
-    // Verificar contraseña
-    if (mockUser.password !== password.value) {
-      errorMessage.value = 'Contraseña incorrecta'
-      hasError.value = true
-      return
+    if (!authData.user) {
+      throw new Error('No se pudo iniciar sesión')
     }
 
-    // Login exitoso
-    authStore.loginMock(mockUser.role)
-    
-    console.log(`✅ Login exitoso como ${mockUser.role}`)
+    // PASO 2: Obtener el perfil del usuario (para saber su rol)
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('nombre_completo, telefono, rol')
+      .eq('id', authData.user.id)
+      .single()
 
-    // Redirigir según el rol
-    router.push(mockUser.redirectTo)
+    if (profileError || !profileData) {
+      throw new Error('No se pudo obtener la información del perfil')
+    }
 
-  } catch (error) {
+    // PASO 3: Guardar en el auth store
+    authStore.setUser({
+      id: authData.user.id,
+      email: authData.user.email || '',
+      nombre: profileData.nombre_completo,
+      telefono: profileData.telefono,
+      role: profileData.rol as UserRole
+    })
+
+    console.log(`✅ Login exitoso como ${profileData.rol}`)
+
+    // PASO 4: Redirigir según el rol
+    const redirectMap = {
+      cliente: '/dashboard-cliente',
+      instructor: '/calendario-instructor',
+      admin: '/gestion-clientes',
+      guest: '/'
+    }
+
+    const redirectTo = redirectMap[profileData.rol as UserRole]
+    router.push(redirectTo)
+
+  } catch (error: unknown) {
     console.error('Error en login:', error)
-    errorMessage.value = 'Error al iniciar sesión. Intenta de nuevo.'
+    
+    const errorMsg = error instanceof Error ? error.message : 'Error desconocido'
+    
+    // Manejar errores específicos de Supabase
+    if (errorMsg.includes('Invalid login credentials')) {
+      errorMessage.value = 'Correo o contraseña incorrectos'
+    } else if (errorMsg.includes('Email not confirmed')) {
+      errorMessage.value = 'Por favor confirma tu correo electrónico'
+    } else if (errorMsg.includes('perfil')) {
+      errorMessage.value = 'Tu cuenta no está configurada correctamente. Contacta soporte.'
+    } else {
+      errorMessage.value = 'Error al iniciar sesión. Intenta de nuevo.'
+    }
+    
     hasError.value = true
   } finally {
     isLoading.value = false
@@ -291,48 +293,6 @@ h3 {
 
 .link a:hover {
   text-decoration: underline;
-}
-
-/* Info de desarrollo */
-.dev-info {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #555;
-}
-
-.dev-info details {
-  cursor: pointer;
-}
-
-.dev-info summary {
-  color: #49a7ff;
-  font-size: 13px;
-  user-select: none;
-  padding: 8px;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.dev-info summary:hover {
-  background: rgba(73, 167, 255, 0.1);
-}
-
-.test-users {
-  margin-top: 12px;
-  padding: 12px;
-  background: #2a2a2a;
-  border-radius: 4px;
-  font-size: 12px;
-  line-height: 1.8;
-}
-
-.test-users p {
-  margin: 4px 0;
-  color: #ccc;
-}
-
-.test-users strong {
-  color: #49a7ff;
 }
 
 /* Responsive */
