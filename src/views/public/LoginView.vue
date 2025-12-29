@@ -11,13 +11,13 @@
             {{ errorMessage }}
           </div>
 
-          <h3>Usuario</h3>
+          <h3>Correo Electrónico</h3>
           <input 
             v-model="usuario" 
             type="text" 
             class="input-field"
             :class="{ 'error': hasError }"
-            placeholder="Introduce tu usuario"
+            placeholder="Introduce tu correo"
             @keyup.enter="iniciarSesion"
             :disabled="isLoading"
           >
