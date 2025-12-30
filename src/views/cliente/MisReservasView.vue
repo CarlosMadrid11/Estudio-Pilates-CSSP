@@ -276,28 +276,30 @@ const cancelarReserva = async (reserva: Reserva) => {
 
     console.log('✅ Reserva cancelada')
 
-    // PASO 2: Devolver clase al paquete (primero obtener valor actual)
-    const { data: paqueteData } = await supabase
+    // PASO 2: Devolver clase al paquete
+    const { data: paqueteData, error: paqueteErrorGet } = await supabase
       .from('mis_paquetes')
       .select('clases_restantes')
       .eq('id', reserva.mi_paquete_id)
       .single()
 
-    if (paqueteData) {
-      const { error: paqueteError } = await supabase
+    if (paqueteErrorGet) {
+      console.error('⚠️ Error al obtener paquete:', paqueteErrorGet)
+    } else if (paqueteData) {
+      const { error: paqueteErrorUpdate } = await supabase
         .from('mis_paquetes')
         .update({ clases_restantes: paqueteData.clases_restantes + 1 })
         .eq('id', reserva.mi_paquete_id)
 
-      if (paqueteError) {
-        console.error('⚠️ Error al devolver clase:', paqueteError)
+      if (paqueteErrorUpdate) {
+        console.error('⚠️ Error al devolver clase:', paqueteErrorUpdate)
       } else {
         console.log('✅ Clase devuelta al paquete')
       }
     }
 
-    if (paqueteError) {
-      console.error('⚠️ Error al devolver clase:', paqueteError)
+    if (paqueteErrorGet) {
+      console.error('⚠️ Error al devolver clase:', paqueteErrorGet)
       // No lanzamos error para no bloquear la UI
     } else {
       console.log('✅ Clase devuelta al paquete')
