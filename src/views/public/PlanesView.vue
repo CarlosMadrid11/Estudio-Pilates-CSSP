@@ -153,6 +153,8 @@ const formatearPrecio = (precio: number): string => {
   })
 }
 
+//Modificamos las politicas por eso no estaba agarrando
+
 // Comprar plan
 const comprarPlan = async (paquete: Paquete) => {
   console.log('💳 Iniciando compra de paquete:', paquete)
