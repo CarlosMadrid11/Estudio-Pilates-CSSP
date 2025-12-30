@@ -162,11 +162,11 @@ const comprarPlan = async (paquete: Paquete) => {
 
   // sin autenticacion para hacer una prueba
   // Verificar autenticación
-  // if (!authStore.isAuthenticated) {
-  //   alert('Debes iniciar sesión para comprar un paquete')
-  //   router.push('/login')
-  //   return
-  // }
+  if (!authStore.isAuthenticated) {
+    alert('Debes iniciar sesión para comprar un paquete')
+    router.push('/login')
+    return
+  }
 
   // Verificar que sea un cliente
   if (authStore.role !== 'cliente') {
