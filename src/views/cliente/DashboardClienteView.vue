@@ -152,13 +152,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 
-// Router y Store
-const router = useRouter()
+// Store
 const authStore = useAuthStore()
 
 // Types
@@ -254,15 +252,20 @@ const cargarDatos = async () => {
     console.log('✅ Paquetes obtenidos:', paquetesData)
 
     // Mapear datos
-    paquetesActivos.value = (paquetesData || []).map((item: any) => ({
-      id: item.id,
-      paquete_nombre: item.paquetes?.nombre || 'Paquete',
-      clases_totales: item.clases_totales,
-      clases_restantes: item.clases_restantes,
-      fecha_compra: item.fecha_compra,
-      fecha_vencimiento: item.fecha_vencimiento,
-      activo: item.activo
-    }))
+    paquetesActivos.value = (paquetesData || []).map((item) => {
+      // Type assertion para el objeto paquetes
+      const paqueteInfo = item.paquetes as unknown as { nombre: string } | null
+      
+      return {
+        id: item.id,
+        paquete_nombre: paqueteInfo?.nombre || 'Paquete',
+        clases_totales: item.clases_totales,
+        clases_restantes: item.clases_restantes,
+        fecha_compra: item.fecha_compra,
+        fecha_vencimiento: item.fecha_vencimiento,
+        activo: item.activo
+      }
+    })
 
     console.log('✅ Dashboard cargado completamente')
 
@@ -308,6 +311,11 @@ const getEstadoClass = (paquete: PaqueteActivo): string => {
 
 // Cargar al montar
 onMounted(() => {
+  cargarDatos()
+})
+
+// Recargar cada vez que se activa la vista (cuando vuelves de otra ruta)
+onActivated(() => {
   cargarDatos()
 })
 </script>
@@ -388,8 +396,8 @@ h2 {
   font-size: 15px;
   color: white;
   display: flex;
-  /* justify-content: space-around; */
-  align-items: flex-start;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .info-item:last-child {
