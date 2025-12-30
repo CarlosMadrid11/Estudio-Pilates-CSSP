@@ -253,5 +253,8 @@ Proyecto académico y privado.
 
 ---
 
-Última actualización: 28 de Diciembre 2025 fase 1 terminada
+Proximo paso fase 3 donde vamos a quitar las vistas hardcodeadas y vamos a poner los valores reales de la bd
+
+Última actualización: 29 de Diciembre 2025 fase 2 terminada con el detalle de registrarseview
+
 
