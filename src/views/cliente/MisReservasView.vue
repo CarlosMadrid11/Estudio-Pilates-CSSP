@@ -135,6 +135,7 @@ const cargarReservas = async () => {
     reservas.value = (reservasData || [])
       .filter((r) => r.clases) // Filtrar reservas sin clase
       .map((item) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const clase = item.clases as any
         const instructor = clase?.instructores?.profiles
         
@@ -275,11 +276,25 @@ const cancelarReserva = async (reserva: Reserva) => {
 
     console.log('✅ Reserva cancelada')
 
-    // PASO 2: Devolver clase al paquete
-    const { error: paqueteError } = await supabase
+    // PASO 2: Devolver clase al paquete (primero obtener valor actual)
+    const { data: paqueteData } = await supabase
       .from('mis_paquetes')
-      .update({ clases_restantes: supabase.sql`clases_restantes + 1` })
+      .select('clases_restantes')
       .eq('id', reserva.mi_paquete_id)
+      .single()
+
+    if (paqueteData) {
+      const { error: paqueteError } = await supabase
+        .from('mis_paquetes')
+        .update({ clases_restantes: paqueteData.clases_restantes + 1 })
+        .eq('id', reserva.mi_paquete_id)
+
+      if (paqueteError) {
+        console.error('⚠️ Error al devolver clase:', paqueteError)
+      } else {
+        console.log('✅ Clase devuelta al paquete')
+      }
+    }
 
     if (paqueteError) {
       console.error('⚠️ Error al devolver clase:', paqueteError)
@@ -289,13 +304,21 @@ const cancelarReserva = async (reserva: Reserva) => {
     }
 
     // PASO 3: Actualizar capacidad de la clase
-    const { error: capacidadError } = await supabase
+    const { data: claseData } = await supabase
       .from('clases')
-      .update({ capacidad_actual: supabase.sql`capacidad_actual - 1` })
+      .select('capacidad_actual')
       .eq('id', reserva.clase_id)
+      .single()
 
-    if (capacidadError) {
-      console.error('⚠️ Error al actualizar capacidad:', capacidadError)
+    if (claseData && claseData.capacidad_actual > 0) {
+      const { error: capacidadError } = await supabase
+        .from('clases')
+        .update({ capacidad_actual: claseData.capacidad_actual - 1 })
+        .eq('id', reserva.clase_id)
+
+      if (capacidadError) {
+        console.error('⚠️ Error al actualizar capacidad:', capacidadError)
+      }
     }
 
     // PASO 4: Actualizar UI
