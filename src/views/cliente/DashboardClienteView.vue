@@ -388,8 +388,8 @@ h2 {
   font-size: 15px;
   color: white;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  /* justify-content: space-around; */
+  align-items: flex-start;
 }
 
 .info-item:last-child {
