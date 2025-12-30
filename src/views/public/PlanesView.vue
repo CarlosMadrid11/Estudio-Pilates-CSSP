@@ -21,7 +21,7 @@
     <!-- Plans Container -->
     <section v-else class="plans-container">
       <div 
-        v-for="(paquete, index) in paquetes" 
+        v-for="paquete in paquetes" 
         :key="paquete.id"
         class="plan"
         :class="{ 'best-option': paquete.destacado }"
@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
@@ -119,7 +119,7 @@ const fetchPaquetes = async () => {
 }
 
 // Calcular ahorros (comparando con precio por clase del paquete base)
-const calcularAhorros = (paquetesRaw: any[]): Paquete[] => {
+const calcularAhorros = (paquetesRaw: Paquete[]): Paquete[] => {
   if (paquetesRaw.length === 0) return []
 
   // Ordenar por número de clases
@@ -130,7 +130,7 @@ const calcularAhorros = (paquetesRaw: any[]): Paquete[] => {
   const precioClaseBase = paqueteBase.precio / paqueteBase.num_clases
 
   return sorted.map((paquete, index) => {
-    const precioClaseActual = paquete.precio / paquete.num_clases
+    // Calcular precio sin descuento basado en precio por clase del paquete base
     const precioSinDescuento = precioClaseBase * paquete.num_clases
     const ahorro = Math.round(precioSinDescuento - paquete.precio)
 
