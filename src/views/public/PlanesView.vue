@@ -159,12 +159,14 @@ const formatearPrecio = (precio: number): string => {
 const comprarPlan = async (paquete: Paquete) => {
   console.log('💳 Iniciando compra de paquete:', paquete)
   
+
+  // sin autenticacion para hacer una prueba
   // Verificar autenticación
-  if (!authStore.isAuthenticated) {
-    alert('Debes iniciar sesión para comprar un paquete')
-    router.push('/login')
-    return
-  }
+  // if (!authStore.isAuthenticated) {
+  //   alert('Debes iniciar sesión para comprar un paquete')
+  //   router.push('/login')
+  //   return
+  // }
 
   // Verificar que sea un cliente
   if (authStore.role !== 'cliente') {
