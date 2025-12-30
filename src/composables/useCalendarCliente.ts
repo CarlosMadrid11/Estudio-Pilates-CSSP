@@ -1,53 +1,26 @@
+// src/composables/useCalendarCliente.ts
+
 import { ref, onMounted, computed, type Ref } from 'vue'
 import { Calendar, type CalendarOptions } from '@fullcalendar/core'
 import type { DateClickArg } from '@fullcalendar/interaction'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import esLocale from '@fullcalendar/core/locales/es'
+import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
 // ============================================
 // TIPOS E INTERFACES
 // ============================================
 
 export interface HorarioDisponible {
-  valor: string  // "09:00"
-  texto: string  // "9:00 AM"
+  valor: string
+  texto: string
   disponible: boolean
-}
-
-export interface ReservaCliente {
-  fecha: string
-  hora: string
-  tipoClase: string
-}
-
-// ============================================
-// HORARIOS DISPONIBLES (HARDCODED)
-// ============================================
-
-const horariosDelDia: HorarioDisponible[] = [
-  { valor: '06:00', texto: '6:00 AM', disponible: true },
-  { valor: '07:00', texto: '7:00 AM', disponible: true },
-  { valor: '08:00', texto: '8:00 AM', disponible: true },
-  { valor: '09:00', texto: '9:00 AM', disponible: true },
-  { valor: '10:00', texto: '10:00 AM', disponible: true },
-  { valor: '11:00', texto: '11:00 AM', disponible: true },
-  { valor: '12:00', texto: '12:00 PM', disponible: true },
-  { valor: '13:00', texto: '1:00 PM', disponible: true },
-  { valor: '14:00', texto: '2:00 PM', disponible: true },
-  { valor: '15:00', texto: '3:00 PM', disponible: true },
-  { valor: '16:00', texto: '4:00 PM', disponible: true },
-  { valor: '17:00', texto: '5:00 PM', disponible: true },
-  { valor: '18:00', texto: '6:00 PM', disponible: true },
-  { valor: '19:00', texto: '7:00 PM', disponible: true },
-  { valor: '20:00', texto: '8:00 PM', disponible: true }
-]
-
-// Simular horarios ocupados (esto vendrá de tu API más adelante)
-const horariosOcupados: Record<string, string[]> = {
-  '2024-12-05': ['09:00', '11:00', '15:00'],
-  '2024-12-06': ['10:00', '14:00', '17:00'],
-  '2024-12-07': ['08:00', '12:00', '16:00']
+  clase_id?: string
+  capacidad_actual?: number
+  capacidad_maxima?: number
 }
 
 // ============================================
@@ -55,6 +28,9 @@ const horariosOcupados: Record<string, string[]> = {
 // ============================================
 
 export function useCalendarCliente() {
+  const authStore = useAuthStore()
+  const router = useRouter()
+
   // Referencias reactivas
   const calendarEl: Ref<HTMLElement | null> = ref(null)
   let calendar: Calendar | null = null
@@ -63,43 +39,29 @@ export function useCalendarCliente() {
   const fechaSeleccionada = ref('')
   const horaSeleccionada = ref('')
   const cargandoHorarios = ref(false)
+  const horariosDisponibles = ref<HorarioDisponible[]>([])
+
+  // IDs necesarios
+  const clienteId = ref<string>('')
+  const paqueteActivoId = ref<string>('')
 
   // ============================================
-  // COMPUTED - HORARIOS DISPONIBLES
+  // COMPUTED
   // ============================================
-
-  const horariosDisponibles = computed((): HorarioDisponible[] => {
-    if (!fechaSeleccionada.value) return []
-
-    const ocupados = horariosOcupados[fechaSeleccionada.value] || []
-    
-    return horariosDelDia.map(horario => ({
-      ...horario,
-      disponible: !ocupados.includes(horario.valor)
-    }))
-  })
 
   const hayHorariosDisponibles = computed((): boolean => {
     return horariosDisponibles.value.some(h => h.disponible)
   })
 
-  // ============================================
-  // FORMATEO DE FECHA
-  // ============================================
-
-  const formatearFecha = (fecha: string): string => {
-    const date = new Date(fecha + 'T00:00:00')
-    const opciones: Intl.DateTimeFormatOptions = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    }
-    return date.toLocaleDateString('es-MX', opciones)
-  }
-
   const fechaFormateada = computed((): string => {
-    return fechaSeleccionada.value ? formatearFecha(fechaSeleccionada.value) : ''
+    if (!fechaSeleccionada.value) return ''
+    const date = new Date(fechaSeleccionada.value + 'T00:00:00')
+    return date.toLocaleDateString('es-MX', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
   })
 
   // ============================================
@@ -108,7 +70,7 @@ export function useCalendarCliente() {
   
   const inicializarCalendario = (): void => {
     if (!calendarEl.value) {
-      console.error('No se encontró el elemento del calendario')
+      console.error('❌ No se encontró el elemento del calendario')
       return
     }
 
@@ -120,29 +82,22 @@ export function useCalendarCliente() {
       headerToolbar: {
         left: 'prev,next today',
         center: 'title',
-        right: 'dayGridMonth'
+        right: ''
       },
+      
+      height: 'auto',
+      selectable: true,
+      selectMirror: true,
+      dayMaxEvents: true,
+      weekends: true,
       
       // Deshabilitar días pasados
       validRange: {
         start: new Date().toISOString().split('T')[0]
       },
       
-      // Solo permitir selección
-      selectable: true,
-      selectMirror: true,
-      
-      // Deshabilitar arrastrar
-      editable: false,
-      
-      // Marcar días con disponibilidad (opcional, visual)
-      events: [
-        // Puedes agregar marcadores visuales de disponibilidad aquí
-      ],
-      
       // Click en un día
       dateClick: (info: DateClickArg): void => {
-        // Solo permitir días futuros o hoy
         const fechaClick = new Date(info.dateStr + 'T00:00:00')
         const hoy = new Date()
         hoy.setHours(0, 0, 0, 0)
@@ -162,77 +117,78 @@ export function useCalendarCliente() {
   }
 
   // ============================================
-  // GESTIÓN DEL MODAL
+  // ABRIR MODAL Y CARGAR HORARIOS
   // ============================================
   
-  const abrirModal = (): void => {
-    cargandoHorarios.value = true
+  const abrirModal = async (): Promise<void> => {
     modalAbierto.value = true
-    
-    // Simular carga de horarios (aquí llamarías a tu API)
-    setTimeout(() => {
-      cargandoHorarios.value = false
-    }, 500)
+    await cargarHorariosDisponibles(fechaSeleccionada.value)
   }
 
   const cerrarModal = (): void => {
     modalAbierto.value = false
     fechaSeleccionada.value = ''
     horaSeleccionada.value = ''
+    horariosDisponibles.value = []
   }
 
   // ============================================
-  // CONFIRMAR RESERVA
-  // ============================================
-  
-  const confirmarReserva = (): void => {
-    if (!horaSeleccionada.value) {
-      alert('⚠️ Por favor selecciona una hora')
-      return
-    }
-
-    const reserva: ReservaCliente = {
-      fecha: fechaSeleccionada.value,
-      hora: horaSeleccionada.value,
-      tipoClase: 'Pilates' // Esto lo puedes personalizar
-    }
-
-    console.log('Reserva a confirmar:', reserva)
-    
-    // Aquí harías la llamada a tu API para guardar la reserva
-    // Ejemplo:
-    // await api.crearReserva(reserva)
-    
-    alert(`✅ Reserva confirmada para el ${fechaFormateada.value} a las ${horaSeleccionada.value}`)
-    
-    // Marcar el horario como ocupado localmente (temporal)
-    if (!horariosOcupados[fechaSeleccionada.value]) {
-      horariosOcupados[fechaSeleccionada.value] = []
-    }
-    horariosOcupados[fechaSeleccionada.value].push(horaSeleccionada.value)
-    
-    cerrarModal()
-    
-    // Opcional: Navegar de vuelta a MisReservas
-    // router.push('/mis-reservas')
-  }
-
-  // ============================================
-  // CARGAR HORARIOS DESDE API (PARA FUTURO)
+  // CARGAR HORARIOS DESDE SUPABASE
   // ============================================
   
   const cargarHorariosDisponibles = async (fecha: string): Promise<void> => {
+    cargandoHorarios.value = true
+    horariosDisponibles.value = []
+
     try {
-      cargandoHorarios.value = true
-      
-      // Aquí llamarías a tu API
-      // const response = await api.getHorariosDisponibles(fecha)
-      // horariosOcupados[fecha] = response.ocupados
-      
-      console.log('Cargando horarios para:', fecha)
-      
+      console.log('📅 Cargando horarios para:', fecha)
+
+      // Obtener clases del día desde Supabase
+      const { data: clasesData, error: clasesError } = await supabase
+        .from('clases')
+        .select(`
+          id,
+          fecha,
+          hora_inicio,
+          hora_fin,
+          capacidad_maxima,
+          capacidad_actual,
+          instructores (
+            profiles (
+              nombre_completo
+            )
+          )
+        `)
+        .eq('fecha', fecha)
+        .order('hora_inicio', { ascending: true })
+
+      if (clasesError) {
+        console.error('❌ Error al obtener clases:', clasesError)
+        throw clasesError
+      }
+
+      console.log('✅ Clases obtenidas:', clasesData)
+
+      // Mapear a horarios disponibles
+      if (clasesData && clasesData.length > 0) {
+        horariosDisponibles.value = clasesData.map((clase) => {
+          const disponible = (clase.capacidad_actual || 0) < clase.capacidad_maxima
+          
+          return {
+            valor: `${clase.hora_inicio}-${clase.hora_fin}`,
+            texto: `${clase.hora_inicio.substring(0, 5)} - ${clase.hora_fin.substring(0, 5)}`,
+            disponible,
+            clase_id: clase.id,
+            capacidad_actual: clase.capacidad_actual || 0,
+            capacidad_maxima: clase.capacidad_maxima
+          }
+        })
+      }
+
+      console.log('✅ Horarios procesados:', horariosDisponibles.value)
+
     } catch (error) {
-      console.error('Error al cargar horarios:', error)
+      console.error('❌ Error al cargar horarios:', error)
       alert('❌ Error al cargar horarios disponibles')
     } finally {
       cargandoHorarios.value = false
@@ -240,7 +196,141 @@ export function useCalendarCliente() {
   }
 
   // ============================================
-  // LIFECYCLE HOOK
+  // CONFIRMAR RESERVA
+  // ============================================
+  
+  const confirmarReserva = async (): Promise<void> => {
+    if (!horaSeleccionada.value) {
+      alert('⚠️ Por favor selecciona una hora')
+      return
+    }
+
+    try {
+      console.log('📝 Confirmando reserva...')
+
+      // PASO 1: Obtener cliente_id
+      const { data: clienteData, error: clienteError } = await supabase
+        .from('clientes')
+        .select('id')
+        .eq('profile_id', authStore.userId)
+        .single()
+
+      if (clienteError || !clienteData) {
+        throw new Error('No se encontró información del cliente')
+      }
+
+      clienteId.value = clienteData.id
+
+      // PASO 2: Verificar paquete activo con clases
+      const { data: paqueteData, error: paqueteError } = await supabase
+        .from('mis_paquetes')
+        .select('id, clases_restantes, fecha_vencimiento')
+        .eq('cliente_id', clienteId.value)
+        .eq('activo', true)
+        .gt('clases_restantes', 0)
+        .gte('fecha_vencimiento', new Date().toISOString())
+        .order('fecha_vencimiento', { ascending: true })
+        .limit(1)
+        .single()
+
+      if (paqueteError || !paqueteData) {
+        alert('❌ No tienes un paquete activo con clases disponibles.\n\nPor favor compra un paquete en la sección de Planes.')
+        router.push('/planes')
+        return
+      }
+
+      paqueteActivoId.value = paqueteData.id
+      console.log('✅ Paquete activo:', paqueteActivoId.value)
+
+      // PASO 3: Obtener clase_id
+      const horarioObj = horariosDisponibles.value.find(h => h.valor === horaSeleccionada.value)
+      
+      if (!horarioObj || !horarioObj.clase_id) {
+        throw new Error('No se encontró la clase seleccionada')
+      }
+
+      const claseId = horarioObj.clase_id
+
+      // PASO 4: Verificar reserva duplicada
+      const { data: reservaDuplicada } = await supabase
+        .from('mis_reservas')
+        .select('id')
+        .eq('cliente_id', clienteId.value)
+        .eq('clase_id', claseId)
+        .maybeSingle()
+
+      if (reservaDuplicada) {
+        alert('⚠️ Ya tienes una reserva para esta clase')
+        return
+      }
+
+      // PASO 5: Verificar capacidad
+      if (horarioObj.capacidad_actual && horarioObj.capacidad_maxima) {
+        if (horarioObj.capacidad_actual >= horarioObj.capacidad_maxima) {
+          alert('❌ Esta clase ya está llena')
+          await cargarHorariosDisponibles(fechaSeleccionada.value)
+          return
+        }
+      }
+
+      // PASO 6: Crear reserva
+      const { error: insertError } = await supabase
+        .from('mis_reservas')
+        .insert({
+          cliente_id: clienteId.value,
+          clase_id: claseId,
+          mi_paquete_id: paqueteActivoId.value,
+          fecha_reserva: new Date().toISOString(),
+          estado: 'confirmada'
+        })
+
+      if (insertError) {
+        console.error('❌ Error al crear reserva:', insertError)
+        throw new Error(`Error: ${insertError.message}`)
+      }
+
+      console.log('✅ Reserva creada')
+
+      // PASO 7: Actualizar capacidad de clase
+      const { data: claseActualData } = await supabase
+        .from('clases')
+        .select('capacidad_actual')
+        .eq('id', claseId)
+        .single()
+
+      if (claseActualData) {
+        await supabase
+          .from('clases')
+          .update({ capacidad_actual: (claseActualData.capacidad_actual || 0) + 1 })
+          .eq('id', claseId)
+      }
+
+      // PASO 8: Descontar clase del paquete
+      await supabase
+        .from('mis_paquetes')
+        .update({ clases_restantes: paqueteData.clases_restantes - 1 })
+        .eq('id', paqueteActivoId.value)
+
+      // PASO 9: Éxito
+      alert(
+        `✅ ¡Reserva confirmada!\n\n` +
+        `📅 Fecha: ${fechaFormateada.value}\n` +
+        `🕐 Hora: ${horarioObj.texto}\n\n` +
+        `Te quedan ${paqueteData.clases_restantes - 1} clases en tu paquete.`
+      )
+
+      cerrarModal()
+      router.push('/mis-reservas')
+
+    } catch (error) {
+      console.error('❌ Error al confirmar:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      alert(`❌ Error al confirmar la reserva:\n\n${errorMessage}`)
+    }
+  }
+
+  // ============================================
+  // LIFECYCLE
   // ============================================
   
   onMounted(() => {
@@ -248,26 +338,19 @@ export function useCalendarCliente() {
   })
 
   // ============================================
-  // RETORNAR API DEL COMPOSABLE
+  // RETURN
   // ============================================
   
   return {
-    // Referencias
     calendarEl,
     modalAbierto,
     fechaSeleccionada,
     horaSeleccionada,
     cargandoHorarios,
-    
-    // Computed
     horariosDisponibles,
     hayHorariosDisponibles,
     fechaFormateada,
-    
-    // Métodos
-    abrirModal,
     cerrarModal,
-    confirmarReserva,
-    cargarHorariosDisponibles
+    confirmarReserva
   }
 }
