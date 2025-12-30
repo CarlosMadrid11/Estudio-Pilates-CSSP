@@ -154,27 +154,104 @@ const formatearPrecio = (precio: number): string => {
 }
 
 // Comprar plan
-const comprarPlan = (paquete: Paquete) => {
-  console.log('💳 Comprando paquete:', paquete)
+const comprarPlan = async (paquete: Paquete) => {
+  console.log('💳 Iniciando compra de paquete:', paquete)
   
-  // Si no está autenticado, redirigir al login
+  // Verificar autenticación
   if (!authStore.isAuthenticated) {
     alert('Debes iniciar sesión para comprar un paquete')
     router.push('/login')
     return
   }
 
-  // TODO: Implementar flujo de compra (FASE 3 avanzada)
-  alert(
-    `¡Has seleccionado el ${paquete.nombre}!\n\n` +
+  // Verificar que sea un cliente
+  if (authStore.role !== 'cliente') {
+    alert('Solo los clientes pueden comprar paquetes')
+    return
+  }
+
+  // Confirmar compra
+  const confirmar = confirm(
+    `¿Confirmas la compra del ${paquete.nombre}?\n\n` +
     `📦 ${paquete.num_clases} clases\n` +
     `⏰ Vigencia: ${paquete.vigencia_dias} días\n` +
-    `💰 Precio: $${formatearPrecio(paquete.precio)} MXN\n` +
-    (paquete.ahorro && paquete.ahorro > 0 ? `✨ Ahorras: $${formatearPrecio(paquete.ahorro)} MXN` : '') +
-    `\n\n🚧 Función de compra en desarrollo...`
+    `💰 Precio: ${formatearPrecio(paquete.precio)} MXN\n` +
+    (paquete.ahorro && paquete.ahorro > 0 ? `✨ Ahorras: ${formatearPrecio(paquete.ahorro)} MXN\n` : '') +
+    `\n⚠️ Esta acción se registrará en la base de datos.`
   )
-  
-  // router.push('/metodo-pago')
+
+  if (!confirmar) {
+    console.log('❌ Compra cancelada por el usuario')
+    return
+  }
+
+  try {
+    console.log('🔍 Obteniendo cliente_id...')
+    
+    // PASO 1: Obtener el cliente_id del usuario autenticado
+    const { data: clienteData, error: clienteError } = await supabase
+      .from('clientes')
+      .select('id')
+      .eq('profile_id', authStore.userId)
+      .single()
+
+    if (clienteError || !clienteData) {
+      console.error('❌ Error al obtener cliente:', clienteError)
+      throw new Error('No se encontró tu información de cliente')
+    }
+
+    const clienteId = clienteData.id
+    console.log('✅ Cliente ID obtenido:', clienteId)
+
+    // PASO 2: Calcular fecha de vencimiento
+    const fechaCompra = new Date()
+    const fechaVencimiento = new Date()
+    fechaVencimiento.setDate(fechaVencimiento.getDate() + paquete.vigencia_dias)
+
+    console.log('📅 Fecha compra:', fechaCompra.toISOString())
+    console.log('📅 Fecha vencimiento:', fechaVencimiento.toISOString())
+
+    // PASO 3: Crear registro en mis_paquetes
+    console.log('💾 Insertando en mis_paquetes...')
+    
+    const { data: miPaqueteData, error: insertError } = await supabase
+      .from('mis_paquetes')
+      .insert({
+        cliente_id: clienteId,
+        paquete_id: paquete.id,
+        clases_totales: paquete.num_clases,
+        clases_restantes: paquete.num_clases,
+        fecha_compra: fechaCompra.toISOString(),
+        fecha_vencimiento: fechaVencimiento.toISOString(),
+        activo: true
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('❌ Error al insertar paquete:', insertError)
+      throw new Error(`Error al registrar la compra: ${insertError.message}`)
+    }
+
+    console.log('✅ Paquete comprado exitosamente:', miPaqueteData)
+
+    // PASO 4: Mostrar éxito y redirigir
+    alert(
+      `🎉 ¡Compra exitosa!\n\n` +
+      `Has adquirido el ${paquete.nombre}\n` +
+      `📦 ${paquete.num_clases} clases disponibles\n` +
+      `⏰ Válido hasta: ${fechaVencimiento.toLocaleDateString('es-MX')}\n\n` +
+      `Puedes ver tu paquete en el Dashboard`
+    )
+
+    // Redirigir al dashboard
+    router.push('/dashboard-cliente')
+
+  } catch (err) {
+    console.error('❌ Error en comprarPlan:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+    alert(`❌ Error al comprar el paquete:\n\n${errorMessage}`)
+  }
 }
 
 // Ver información
