@@ -152,11 +152,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onActivated } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 
-// Store
+// Router y Store
+
+const route = useRoute()
 const authStore = useAuthStore()
 
 // Types
@@ -314,9 +317,11 @@ onMounted(() => {
   cargarDatos()
 })
 
-// Recargar cada vez que se activa la vista (cuando vuelves de otra ruta)
-onActivated(() => {
-  cargarDatos()
+// Recargar cuando cambies de ruta y vuelvas al dashboard
+watch(() => route.path, (newPath) => {
+  if (newPath === '/dashboard-cliente') {
+    cargarDatos()
+  }
 })
 </script>
 
