@@ -1,122 +1,141 @@
 <template>
   <div>
-
-
     <div class="calendario-instructor-view">
       <div class="container">
         <!-- ENCABEZADO -->
-        <h1>📅 Calendario de Clases - Instructor</h1>
-        <p class="subtitle">Gestiona tus clases y horarios asignados</p>
+        <div class="header">
+          <h1>📅 Mis Clases Programadas</h1>
+          <p class="subtitle">Vista de tus clases asignadas y estudiantes registrados</p>
+        </div>
         
         <!-- CONTROLES -->
         <div class="controls">
-          <button class="btn-primary" @click="abrirModal">
-            ➕ Agregar Cita
+          <button class="btn-refresh" @click="recargarClases">
+            🔄 Actualizar
           </button>
           <button class="btn-success" @click="cambiarVista('dayGridMonth')">
-            Vista Mensual
+            📆 Vista Mensual
           </button>
           <button class="btn-info" @click="cambiarVista('timeGridWeek')">
-            Vista Semanal
+            📅 Vista Semanal
           </button>
           <button class="btn-info" @click="cambiarVista('timeGridDay')">
-            Vista Diaria
+            📋 Vista Diaria
           </button>
         </div>
 
+        <!-- LOADING -->
+        <div v-if="cargandoClases" class="loading">
+          <div class="spinner"></div>
+          <p>Cargando tus clases...</p>
+        </div>
+
         <!-- CALENDARIO -->
-        <div id="calendar" ref="calendarEl"></div>
+        <div v-else id="calendar" ref="calendarEl"></div>
+
+        <!-- LEYENDA DE COLORES -->
+        <div class="leyenda">
+          <h3>🎨 Código de colores:</h3>
+          <div class="leyenda-items">
+            <div class="leyenda-item">
+              <span class="color-box" style="background: #95a5a6;"></span>
+              <span>Vacía (0%)</span>
+            </div>
+            <div class="leyenda-item">
+              <span class="color-box" style="background: #3498db;"></span>
+              <span>Baja ocupación (&lt;50%)</span>
+            </div>
+            <div class="leyenda-item">
+              <span class="color-box" style="background: #f39c12;"></span>
+              <span>Media ocupación (50-99%)</span>
+            </div>
+            <div class="leyenda-item">
+              <span class="color-box" style="background: #e74c3c;"></span>
+              <span>Llena (100%)</span>
+            </div>
+          </div>
+        </div>
 
         <!-- INFO BOX -->
         <div class="info-box">
-          <h3>🔧 Características implementadas:</h3>
+          <h3>💡 Información:</h3>
           <ul>
-            <li><strong>Múltiples vistas:</strong> mensual, semanal y diaria</li>
-            <li><strong>Agregar eventos:</strong> crea citas con título, fecha, hora y tipo de clase</li>
-            <li><strong>Click en eventos:</strong> haz click en cualquier cita para ver detalles</li>
-            <li><strong>Colores personalizados:</strong> cada tipo de clase tiene su color</li>
-            <li><strong>Arrastrar y soltar:</strong> arrastra eventos para cambiar fechas</li>
-            <li><strong>Idioma español:</strong> totalmente localizado</li>
-            <li><strong>Responsive:</strong> se adapta a móviles y tablets</li>
+            <li>Haz clic en cualquier clase para ver los detalles y lista de estudiantes</li>
+            <li>Los colores indican el nivel de ocupación de cada clase</li>
+            <li>Puedes cambiar entre vista mensual, semanal y diaria</li>
+            <li>Las clases se actualizan automáticamente cuando los clientes reservan</li>
           </ul>
         </div>
       </div>
 
-      <!-- MODAL PARA AGREGAR CITAS -->
+      <!-- MODAL DE DETALLES -->
       <Teleport to="body">
-        <div v-if="modalAbierto" class="modal" @click.self="cerrarModal">
+        <div v-if="modalDetalles && claseSeleccionada" class="modal" @click.self="cerrarModal">
           <div class="modal-content">
-            <h2>Nueva Cita de Pilates</h2>
+            <button class="btn-close" @click="cerrarModal">✕</button>
             
-            <form @submit.prevent="onSubmitForm">
-              <!-- CLIENTE / NOMBRE -->
-              <div class="form-group">
-                <label for="titulo">Cliente / Nombre:</label>
-                <input 
-                  type="text" 
-                  id="titulo" 
-                  v-model="formulario.titulo" 
-                  required
-                  placeholder="Ej: María González"
-                >
+            <h2>📋 Detalles de la Clase</h2>
+            
+            <!-- INFO DE LA CLASE -->
+            <div class="clase-info">
+              <div class="info-item">
+                <span class="label">📅 Fecha:</span>
+                <span class="valor">{{ formatearFecha(claseSeleccionada.fecha) }}</span>
               </div>
               
-              <!-- FECHA -->
-              <div class="form-group">
-                <label for="fecha">Fecha:</label>
-                <input 
-                  type="date" 
-                  id="fecha" 
-                  v-model="formulario.fecha" 
-                  required
-                >
+              <div class="info-item">
+                <span class="label">🕐 Horario:</span>
+                <span class="valor">
+                  {{ claseSeleccionada.hora_inicio.substring(0, 5) }} - 
+                  {{ claseSeleccionada.hora_fin.substring(0, 5) }}
+                </span>
               </div>
               
-              <!-- HORA -->
-              <div class="form-group">
-                <label for="hora">Hora:</label>
-                <input 
-                  type="time" 
-                  id="hora" 
-                  v-model="formulario.hora" 
-                  required
-                >
+              <div class="info-item">
+                <span class="label">👥 Ocupación:</span>
+                <span class="valor">
+                  {{ claseSeleccionada.capacidad_actual }} / {{ claseSeleccionada.capacidad_maxima }}
+                  ({{ porcentajeOcupacion }}%)
+                </span>
               </div>
               
-              <!-- TIPO DE CLASE -->
-              <div class="form-group">
-                <label for="tipo">Tipo de Clase:</label>
-                <select 
-                  id="tipo" 
-                  v-model="formulario.tipo" 
-                  required
-                >
-                  <option value="">Selecciona...</option>
-                  <option value="mat">Mat Pilates</option>
-                  <option value="reformer">Reformer</option>
-                  <option value="cadillac">Cadillac</option>
-                  <option value="privada">Clase Privada</option>
-                  <option value="grupal">Clase Grupal</option>
-                </select>
+              <div class="info-item">
+                <span class="label">📊 Estado:</span>
+                <span class="badge" :style="{ backgroundColor: colorEstado }">
+                  {{ estadoClase }}
+                </span>
+              </div>
+            </div>
+
+            <!-- LISTA DE CLIENTES -->
+            <div class="clientes-section">
+              <h3>👥 Estudiantes Registrados ({{ claseSeleccionada.clientes.length }})</h3>
+              
+              <div v-if="claseSeleccionada.clientes.length === 0" class="no-clientes">
+                <p>😔 Aún no hay estudiantes registrados en esta clase</p>
               </div>
               
-              <!-- BOTONES -->
-              <div class="modal-buttons">
-                <button 
-                  type="button" 
-                  class="btn-cancel" 
-                  @click="cerrarModal"
+              <div v-else class="clientes-lista">
+                <div 
+                  v-for="(cliente, index) in claseSeleccionada.clientes" 
+                  :key="index"
+                  class="cliente-card"
                 >
-                  Cancelar
-                </button>
-                <button 
-                  type="submit" 
-                  class="btn-primary"
-                >
-                  Guardar Cita
-                </button>
+                  <div class="cliente-numero">{{ index + 1 }}</div>
+                  <div class="cliente-info">
+                    <p class="cliente-nombre">{{ cliente.nombre_completo }}</p>
+                    <p class="cliente-telefono">📞 {{ cliente.telefono }}</p>
+                  </div>
+                </div>
               </div>
-            </form>
+            </div>
+
+            <!-- BOTONES -->
+            <div class="modal-buttons">
+              <button class="btn-primary" @click="cerrarModal">
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       </Teleport>
@@ -125,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { useCalendar } from '@/composables/useCalendar'
+import { useCalendarioInstructor } from '@/composables/useCalendarioInstructor'
 
 // ============================================
 // USAR EL COMPOSABLE
@@ -133,26 +152,17 @@ import { useCalendar } from '@/composables/useCalendar'
 
 const {
   calendarEl,
-  modalAbierto,
-  formulario,
-  abrirModal,
+  modalDetalles,
+  claseSeleccionada,
+  cargandoClases,
+  porcentajeOcupacion,
+  estadoClase,
+  colorEstado,
   cerrarModal,
-  guardarCita,
-  cambiarVista
-} = useCalendar()
-
-// ============================================
-// MANEJAR SUBMIT DEL FORMULARIO
-// ============================================
-
-const onSubmitForm = () => {
-  // Obtener el texto del tipo seleccionado
-  const selectElement = document.getElementById('tipo') as HTMLSelectElement
-  const tipoTexto = selectElement?.options[selectElement.selectedIndex]?.text || formulario.value.tipo
-  
-  // Guardar la cita
-  guardarCita(tipoTexto)
-}
+  cambiarVista,
+  recargarClases,
+  formatearFecha
+} = useCalendarioInstructor()
 </script>
 
 <style scoped>
@@ -162,7 +172,7 @@ const onSubmitForm = () => {
 
 .calendario-instructor-view {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #eced8b 0%, #32321c 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
   min-height: 100vh;
 }
@@ -180,6 +190,10 @@ const onSubmitForm = () => {
    ENCABEZADO
    ============================================ */
 
+.header {
+  margin-bottom: 25px;
+}
+
 h1 {
   color: #667eea;
   margin-bottom: 10px;
@@ -188,7 +202,6 @@ h1 {
 
 .subtitle {
   color: #666;
-  margin-bottom: 20px;
   font-size: 0.95em;
 }
 
@@ -198,15 +211,15 @@ h1 {
 
 .controls {
   display: flex;
-  gap: 15px;
+  gap: 12px;
   margin-bottom: 25px;
   flex-wrap: wrap;
 }
 
 button {
-  padding: 12px 24px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
@@ -219,7 +232,7 @@ button:hover {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-.btn-primary {
+.btn-refresh {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
@@ -234,12 +247,112 @@ button:hover {
   color: white;
 }
 
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  width: 100%;
+  padding: 14px;
+}
+
+/* ============================================
+   LOADING
+   ============================================ */
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 20px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading p {
+  color: #666;
+  font-size: 16px;
+}
+
 /* ============================================
    CALENDARIO
    ============================================ */
 
 #calendar {
   margin-top: 20px;
+}
+
+/* ============================================
+   LEYENDA
+   ============================================ */
+
+.leyenda {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  margin-top: 25px;
+}
+
+.leyenda h3 {
+  color: #667eea;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.leyenda-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-box {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   INFO BOX
+   ============================================ */
+
+.info-box {
+  background: #f0f4ff;
+  border-left: 4px solid #667eea;
+  padding: 20px;
+  margin-top: 25px;
+  border-radius: 10px;
+}
+
+.info-box h3 {
+  color: #667eea;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.info-box ul {
+  margin-left: 20px;
+  color: #555;
+}
+
+.info-box li {
+  margin-bottom: 8px;
+  line-height: 1.6;
 }
 
 /* ============================================
@@ -256,34 +369,32 @@ button:hover {
   background: rgba(0, 0, 0, 0.6);
   z-index: 1000;
   animation: fadeIn 0.3s;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding-top: 50px;
+  padding: 20px;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-content {
   position: relative;
   background: white;
   padding: 30px;
-  max-width: 500px;
-  width: 90%;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
   border-radius: 15px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideDown 0.3s;
+  animation: slideUp 0.3s;
 }
 
-@keyframes slideDown {
+@keyframes slideUp {
   from {
-    transform: translateY(-50px);
+    transform: translateY(50px);
     opacity: 0;
   }
   to {
@@ -292,82 +403,157 @@ button:hover {
   }
 }
 
+.btn-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  background: #e0e0e0;
+  color: #666;
+  font-size: 20px;
+  border-radius: 50%;
+}
+
+.btn-close:hover {
+  background: #d0d0d0;
+}
+
 .modal h2 {
   color: #667eea;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  padding-right: 40px;
 }
 
 /* ============================================
-   FORMULARIO
+   INFO DE CLASE
    ============================================ */
 
-.form-group {
-  margin-bottom: 20px;
+.clase-info {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 25px;
 }
 
-label {
-  display: block;
-  margin-bottom: 8px;
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-weight: 600;
   color: #555;
+  font-size: 14px;
+}
+
+.valor {
+  color: #333;
+  font-size: 14px;
+  text-align: right;
+}
+
+.badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  color: white;
+  font-size: 13px;
   font-weight: 600;
 }
 
-input,
-select {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  transition: border-color 0.3s;
-}
+/* ============================================
+   CLIENTES SECTION
+   ============================================ */
 
-input:focus,
-select:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.modal-buttons {
-  display: flex;
-  gap: 10px;
+.clientes-section {
   margin-top: 25px;
 }
 
-.modal-buttons button {
-  flex: 1;
-}
-
-.btn-cancel {
-  background: #e0e0e0;
-  color: #666;
-}
-
-/* ============================================
-   INFO BOX
-   ============================================ */
-
-.info-box {
-  background: #f0f4ff;
-  border-left: 4px solid #667eea;
-  padding: 15px;
-  margin-top: 20px;
-  border-radius: 8px;
-}
-
-.info-box h3 {
+.clientes-section h3 {
   color: #667eea;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   font-size: 1.1em;
 }
 
-.info-box ul {
-  margin-left: 20px;
-  color: #555;
+.no-clientes {
+  text-align: center;
+  padding: 30px 20px;
+  background: #fff3cd;
+  border-radius: 10px;
 }
 
-.info-box li {
-  margin-bottom: 5px;
+.no-clientes p {
+  color: #856404;
+  margin: 0;
+}
+
+.clientes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cliente-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+  transition: all 0.3s ease;
+}
+
+.cliente-card:hover {
+  background: #e9ecef;
+  transform: translateX(5px);
+}
+
+.cliente-numero {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.cliente-info {
+  flex: 1;
+}
+
+.cliente-nombre {
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 5px 0;
+  font-size: 15px;
+}
+
+.cliente-telefono {
+  color: #666;
+  margin: 0;
+  font-size: 13px;
+}
+
+/* ============================================
+   MODAL BUTTONS
+   ============================================ */
+
+.modal-buttons {
+  margin-top: 25px;
 }
 
 /* ============================================
@@ -387,8 +573,11 @@ select:focus {
     width: 100%;
   }
 
+  .leyenda-items {
+    grid-template-columns: 1fr;
+  }
+
   .modal-content {
-    margin: 20px;
     padding: 20px;
   }
 }
@@ -397,7 +586,6 @@ select:focus {
 <style>
 /* ============================================
    ESTILOS GLOBALES PARA FULLCALENDAR
-   (Sin scoped para que afecten al calendario)
    ============================================ */
 
 .fc {
@@ -432,9 +620,11 @@ select:focus {
   border-radius: 6px;
   cursor: pointer;
   transition: transform 0.2s;
+  font-weight: 600;
 }
 
 .fc-event:hover {
   transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>
