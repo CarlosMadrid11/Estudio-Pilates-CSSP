@@ -1,260 +1,526 @@
 # 🧘‍♀️ Sistema de Gestión para Estudio de Pilates — CSSP
 
-Reestructuración y modernización de un proyecto académico para convertirlo en una **SPA profesional**, escalable y mantenible usando **Vue 3 + TypeScript**.
+Sistema de gestión completo para estudios de Pilates, construido como **SPA profesional** usando **Vue 3 + TypeScript + Supabase**.
 
-Este repositorio contiene el frontend del sistema de gestión para un estudio de pilates. El proyecto fue **analizado desde cero**, conservando las vistas funcionales y **reestructurando completamente la arquitectura**, priorizando buenas prácticas, legibilidad y preparación para integración con Supabase.
+Este proyecto demuestra arquitectura moderna de frontend, integración con BaaS (Backend as a Service), y aplicación de mejores prácticas de desarrollo.
 
 ---
 
 ## 🎯 Objetivo del proyecto
 
-* Construir una SPA profesional con Vue 3.
-* Separar correctamente **layout, vistas, componentes y lógica**.
-* Preparar el sistema para **roles de usuario** (guest, cliente, instructor, administrador).
-* Dejar una base sólida para integrar Supabase (auth, DB y RLS).
-* Convertir el proyecto en una pieza defendible de portafolio.
+Construir un sistema de gestión completo para estudios de Pilates que incluya:
 
-Este proyecto **no busca solo “que funcione”**, sino demostrar criterio técnico y arquitectura limpia.
+- ✅ **Gestión de clientes:** Registro, login, compra de paquetes, reserva de clases
+- ✅ **Dashboard personalizado:** Vista dinámica según rol de usuario
+- ✅ **Sistema de reservas:** Calendario interactivo con validaciones de negocio
+- ⏳ **Panel de instructor:** Visualización de clases y registro de asistencias
+- ⏳ **Panel administrativo:** Gestión de clientes y reportes
+
+**Este proyecto no busca solo "que funcione"**, sino demostrar:
+- Arquitectura limpia y escalable
+- Integración profesional con servicios backend
+- Seguridad a nivel de base de datos (RLS)
+- Código mantenible y defendible en entrevistas técnicas
 
 ---
 
 ## 🚀 Tecnologías utilizadas
 
 ### Frontend
+- **Vue 3** (Composition API) - Framework progresivo
+- **TypeScript** - Tipado estático
+- **Vite** - Build tool y dev server
+- **Vue Router** - Enrutamiento con guards
+- **Pinia** - Estado global
+- **Tailwind CSS** - Utilidades de estilo
+- **Zod** - Validación de formularios
+- **FullCalendar** - Gestión de calendarios interactivos
 
-* Vue 3 (Composition API)
-* TypeScript
-* Vue Router
-* Pinia (estado global)
-* TailwindCSS + Bootstrap
-* Vite
-* Zod (validación de formularios)
-* FullCalendar (gestión de calendarios)
+### Backend (BaaS)
+- **Supabase**
+  - Auth (autenticación con email/password)
+  - PostgreSQL (base de datos relacional)
+  - Row Level Security (RLS)
+  - Real-time subscriptions (futuro)
 
-### Backend / BaaS
-
-* Supabase (Auth, PostgreSQL, Storage, RLS)
-
-### Herramientas
-
-* Git y GitHub
-* Prettier / ESLint
-* Conventional Commits
-
----
-
-## 🔄 Motivo de la reestructuración
-
-La versión original del proyecto presentaba varios problemas comunes en proyectos académicos:
-
-* Duplicación de código (4 barras de navegación distintas).
-* Router acoplado a componentes de layout.
-* Difícil mantenimiento al agregar o cambiar roles.
-* Lógica distribuida sin una estructura clara.
-* Baja escalabilidad.
-
-### Decisión clave
-
-Antes de seguir desarrollando funcionalidades, se decidió **reestructurar completamente el frontend**, manteniendo solo lo realmente reutilizable (vistas y componentes base).
+### Herramientas de desarrollo
+- Git y GitHub (control de versiones)
+- ESLint + Prettier (linting y formateo)
+- Conventional Commits (estándares de commits)
 
 ---
 
-## 🧱 Arquitectura actual del proyecto
+## 📊 Estado actual del proyecto
 
-La aplicación sigue un patrón de **layout centralizado**, donde la estructura general vive en `App.vue` y el router solo se encarga de renderizar vistas.
+```
+FASE 1: ████████████████████ 100% ✅ COMPLETADA
+  ✓ Arquitectura frontend base
+  ✓ Sistema de autenticación
+  ✓ Navegación dinámica por roles
+  ✓ Layout centralizado
 
-Estructura general:
+FASE 2: ███████████████████░  95% 🟡 CASI COMPLETA
+  ✓ Integración con Supabase
+  ✓ Base de datos configurada
+  ✓ RLS implementado
+  ⚠ RegistrarseView con problema conocido
 
-src
-assets
-components
-layouts
-router
-stores
-services
-views
-public
-cliente
-instructor
-admin
-App.vue
-main.ts
+FASE 3: ████████████████████ 100% ✅ COMPLETADA
+  ✓ Sistema de compra de paquetes
+  ✓ Dashboard cliente funcional
+  ✓ Gestión de reservas completa
+  ✓ Calendario de reservas interactivo
 
----
+FASE 4: ░░░░░░░░░░░░░░░░░░░░   0% ⏳ PENDIENTE
+  ⏳ Panel de instructor
+  ⏳ Panel administrativo
 
-## 🧭 Organización de vistas por rol
+TOTAL:  ██████████████░░░░░░  70% del proyecto
+```
 
-### Vistas públicas (Guest)
-
-* Landing page
-* Planes
-* Ayuda
-* Login
-* Registro
-
-### Cliente
-
-* Dashboard
-* Mis reservas
-* Calendario del cliente
-* Método de pago (placeholder)
-
-### Instructor
-
-* Calendario
-* Registro de asistencia
-
-### Administrador
-
-* Gestión de clientes
-* Reportes de ventas (placeholder)
-
-Cada grupo vive en su propia carpeta dentro de `views`, lo que facilita lectura, mantenimiento y control de acceso.
+**Última actualización:** 30 de Diciembre, 2025
 
 ---
 
-## 🧩 Navbar dinámico (decisión clave)
+## 🏗️ Arquitectura del sistema
 
-En lugar de tener múltiples barras de navegación:
+### Estructura de carpetas
 
-* Se utiliza **un solo componente Navbar**.
-* El navbar **cambia dinámicamente** según el rol del usuario.
-* El rol se obtiene desde el estado global (Pinia).
+```
+src/
+├── assets/              # Recursos estáticos
+├── components/          # Componentes reutilizables
+│   ├── NavbarDynamic.vue
+│   └── Footer.vue
+├── composables/         # Lógica reutilizable (Composition API)
+│   ├── usePlanes.ts
+│   ├── useDashboard.ts
+│   ├── useMisReservas.ts
+│   └── useCalendarCliente.ts
+├── lib/                 # Configuraciones externas
+│   └── supabase.ts     # Cliente de Supabase
+├── stores/              # Estado global (Pinia)
+│   └── auth.ts         # Store de autenticación
+├── views/               # Vistas organizadas por rol
+│   ├── public/         # Vistas públicas (guest)
+│   │   ├── LandingPageView.vue
+│   │   ├── PlanesView.vue
+│   │   ├── LoginView.vue
+│   │   └── RegistrarseView.vue
+│   ├── cliente/        # Vistas de cliente
+│   │   ├── DashboardClienteView.vue
+│   │   ├── MisReservasView.vue
+│   │   ├── CalendarioClienteView.vue
+│   │   └── MetodoPagoView.vue
+│   ├── instructor/     # Vistas de instructor
+│   │   ├── CalendarioInstructorView.vue
+│   │   └── RegistroAsistenciaView.vue
+│   └── admin/          # Vistas de administrador
+│       ├── GestionClientesView.vue
+│       └── ReportesVentasView.vue
+├── router/
+│   └── index.ts        # Configuración de rutas + guards
+└── App.vue             # Layout principal
+```
 
-Esto evita duplicación de:
+### Decisiones arquitectónicas clave
 
-* HTML
-* CSS
-* Lógica
-* Bugs
+#### 1. **Navbar dinámico centralizado**
+En lugar de múltiples navbars, se usa **un solo componente** que cambia según el rol:
 
-Y permite mantener todo el comportamiento del menú en un solo lugar.
+```typescript
+type UserRole = 'guest' | 'cliente' | 'instructor' | 'admin'
+```
+
+**Beneficios:**
+- ✅ Cero duplicación de código
+- ✅ Mantenimiento en un solo lugar
+- ✅ Comportamiento consistente
+
+#### 2. **Composables para lógica de negocio**
+Separación clara entre lógica y presentación:
+
+```typescript
+// En lugar de lógica en el componente
+const { paquetes, comprarPaquete, cargando } = usePlanes()
+```
+
+**Beneficios:**
+- ✅ Reutilización de código
+- ✅ Testing simplificado
+- ✅ Mejor organización
+
+#### 3. **Auth Store como fuente de verdad**
+Estado global de autenticación con Pinia:
+
+```typescript
+interface AuthState {
+  user: User | null
+  role: UserRole
+  isAuthenticated: boolean
+  isInitialized: boolean
+}
+```
+
+**Beneficios:**
+- ✅ Sesión persistente
+- ✅ Guards reactivos
+- ✅ Estado sincronizado
 
 ---
 
-## 🧠 Manejo de estado global (Pinia)
+## 🔐 Sistema de roles y permisos
 
-Pinia se utiliza para manejar:
+### Jerarquía de roles
 
-* Sesión del usuario
-* Rol actual
-* Información compartida entre vistas
-* Lógica de autenticación
+```
+guest → Solo vistas públicas (landing, planes, login)
+  ↓
+cliente → Vistas de cliente (dashboard, reservas, calendario)
+  ↓
+instructor → Vistas de instructor (calendario, asistencias)
+  ↓
+admin → Acceso total (gestión, reportes, configuración)
+```
 
-Stores planeados:
+### Protección de rutas
 
-* auth: sesión, login, logout, rol
-* reservas: reservas del cliente
-* clases: clases y calendarios
-* usuario: perfil del usuario
+Implementado con **Navigation Guards** en Vue Router:
 
-La UI solo consume el estado; la lógica vive en stores y services.
+```typescript
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore()
+  
+  // Verificar autenticación
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return next('/login')
+  }
+  
+  // Verificar rol
+  if (to.meta.allowedRoles) {
+    if (!authStore.hasAccess(to.meta.allowedRoles[0])) {
+      return next(getDashboardByRole(authStore.role))
+    }
+  }
+  
+  next()
+})
+```
 
 ---
 
-## 🔐 Supabase (plan de integración)
+## 🗄️ Modelo de datos (Supabase)
 
-Supabase se usará como Backend as a Service:
+### Esquema relacional
 
-* Autenticación con email/password
-* Tabla `profiles` para roles
-* PostgreSQL como base de datos
-* RLS para proteger datos sensibles
+```
+auth.users (Supabase Auth)
+└── profiles (1:1) - Información del perfil
+    ├── clientes (1:1 si rol='cliente')
+    │   ├── mis_paquetes (1:N) - Paquetes comprados
+    │   └── mis_reservas (1:N) - Reservas de clases
+    └── instructores (1:1 si rol='instructor')
+        └── clases (1:N) - Clases impartidas
+```
 
-Plan de integración:
+### Tablas principales
 
-1. Cliente Supabase centralizado.
-2. Auth sincronizada con Pinia.
-3. RLS para que cada usuario solo acceda a sus datos.
-4. Guards en Vue Router basados en rol.
+#### `profiles`
+```sql
+id          UUID (FK auth.users)
+nombre_completo  VARCHAR(100)
+telefono    VARCHAR(15)
+rol         VARCHAR(20) DEFAULT 'cliente'
+```
+
+#### `clientes`
+```sql
+id          UUID (PK)
+profile_id  UUID (FK profiles) UNIQUE
+direccion   VARCHAR(255)
+```
+
+#### `paquetes`
+```sql
+id          UUID (PK)
+nombre      VARCHAR(50) UNIQUE
+descripcion TEXT
+precio      DECIMAL(10,2)
+num_clases  INTEGER
+vigencia_dias INTEGER
+activo      BOOLEAN DEFAULT true
+```
+
+#### `mis_paquetes`
+```sql
+id          UUID (PK)
+cliente_id  UUID (FK clientes)
+paquete_id  UUID (FK paquetes)
+clases_totales    INTEGER
+clases_restantes  INTEGER
+fecha_compra      TIMESTAMP
+fecha_vencimiento TIMESTAMP
+activo      BOOLEAN DEFAULT true
+```
+
+#### `clases`
+```sql
+id          UUID (PK)
+instructor_id UUID (FK instructores)
+fecha       DATE
+hora_inicio TIME
+hora_fin    TIME
+capacidad_maxima  INTEGER
+capacidad_actual  INTEGER DEFAULT 0
+```
+
+#### `mis_reservas`
+```sql
+id          UUID (PK)
+cliente_id  UUID (FK clientes)
+clase_id    UUID (FK clases)
+mi_paquete_id UUID (FK mis_paquetes)
+fecha_reserva TIMESTAMP
+estado      VARCHAR(20) DEFAULT 'confirmada'
+UNIQUE (cliente_id, clase_id)
+```
+
+### Row Level Security (RLS)
+
+**Todas las tablas tienen RLS activado** para garantizar seguridad:
+
+| Tabla | Políticas activas |
+|-------|------------------|
+| profiles | SELECT, INSERT, UPDATE (own) |
+| clientes | SELECT, INSERT (own) |
+| paquetes | SELECT (all active) |
+| mis_paquetes | SELECT, INSERT, UPDATE (own) |
+| clases | SELECT (all), UPDATE (system) |
+| mis_reservas | SELECT, INSERT, UPDATE, DELETE (own) |
+
+**Ejemplo de política:**
+```sql
+CREATE POLICY "Clientes pueden ver sus propias reservas"
+ON public.mis_reservas FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.clientes
+    WHERE clientes.id = mis_reservas.cliente_id
+    AND clientes.profile_id = auth.uid()
+  )
+);
+```
 
 ---
 
-## 🗄️ Modelo de datos (propuesto)
+## 🎯 Funcionalidades implementadas
 
-* profiles: id, email, nombre, rol
-* planes: nombre, precio, duración
-* clases: fecha, instructor, cupo
-* reservas: cliente, clase, estado
-* paquetes: cliente, plan, vigencia
+### ✅ Rol: Cliente
+
+#### 1. Dashboard personalizado
+- Información del perfil
+- Paquetes activos con clases restantes
+- Próximas reservas
+- Indicadores visuales de estado
+
+#### 2. Sistema de compra de paquetes
+- Catálogo de paquetes disponibles
+- Compra con validación de usuario
+- Cálculo automático de vencimiento
+- Confirmación y redirección
+
+#### 3. Gestión de reservas
+- Ver todas las reservas (activas y canceladas)
+- Filtrado por estado
+- Cancelación con:
+  - Liberación de capacidad
+  - Devolución de clase al paquete
+  - Actualización visual inmediata
+
+#### 4. Calendario de reservas
+- Calendario interactivo mensual
+- Selección de fecha y horario
+- Validaciones:
+  - Paquete activo requerido
+  - No reservas duplicadas
+  - Control de capacidad
+  - Fechas pasadas bloqueadas
+- Transacción completa al reservar
 
 ---
 
 ## 🛠️ Instalación y ejecución
 
-Requisitos:
+### Requisitos previos
+- Node.js 18+
+- npm o yarn
+- Cuenta de Supabase (para desarrollo)
 
-* Node.js (versión definida en package.json)
-* npm o yarn
+### Pasos de instalación
 
-Pasos:
+1. **Clonar el repositorio**
+```bash
+git clone https://github.com/tu-usuario/cssp.git
+cd cssp
+```
 
-1. Clonar el repositorio
-2. Instalar dependencias
-3. Ejecutar el servidor de desarrollo
+2. **Instalar dependencias**
+```bash
+npm install
+```
 
-Variables de entorno:
+3. **Configurar variables de entorno**
+```bash
+cp .env.example .env
+```
 
-* VITE_SUPABASE_URL
-* VITE_SUPABASE_ANON_KEY
+Editar `.env`:
+```env
+VITE_SUPABASE_URL=tu_url_de_supabase
+VITE_SUPABASE_ANON_KEY=tu_anon_key
+```
+
+4. **Ejecutar en desarrollo**
+```bash
+npm run dev
+```
+
+5. **Build para producción**
+```bash
+npm run build
+```
 
 ---
 
-## 🧪 Buenas prácticas aplicadas
+## 🧪 Testing y validación
 
-* Layout único y reutilizable
-* Router limpio (solo vistas)
-* Separación clara de responsabilidades
-* Estado centralizado
-* Preparación para escalabilidad
-* Código legible y defendible
+### Usuario de prueba
+
+```
+Email: carlos.test@gmail.com
+Password: Carlos123!
+Rol: cliente
+```
+
+### Flujo de prueba completo
+
+1. ✅ Login con usuario de prueba
+2. ✅ Ver dashboard con información real
+3. ✅ Navegar a Planes y comprar paquete
+4. ✅ Verificar paquete aparece en dashboard
+5. ✅ Ir a Calendario y reservar clase
+6. ✅ Ver reserva en Mis Reservas
+7. ✅ Cancelar reserva
+8. ✅ Verificar clase devuelta al paquete
+9. ✅ Logout
+
+---
+
+## ⚠️ Problemas conocidos
+
+### 1. RegistrarseView incompleto (Fase 2) 🔴
+- **Estado:** Pendiente de corrección
+- **Síntoma:** Registro se crea en `auth.users` y `profiles`, pero no en `clientes`
+- **Workaround:** Crear usuarios manualmente desde Supabase Dashboard
+- **Prioridad:** Alta (antes de producción)
+
+### 2. Supabase signups bloqueados 🟡
+- **Estado:** Configuración intencional de desarrollo
+- **Causa:** Settings de Supabase Auth
+- **Workaround:** Dashboard manual con "Auto Confirm User"
+- **Impacto:** Solo desarrollo
 
 ---
 
 ## 🔧 Flujo de trabajo con Git
 
-Ramas:
+### Convención de branches
+```
+main      → Estable (producción)
+develop   → Integración (desarrollo)
+feature/* → Nuevas funcionalidades
+fix/*     → Correcciones de bugs
+```
 
-* main: estable
-* develop: integración
-* feature/*: nuevas funcionalidades
-* fix/*: correcciones
+### Convención de commits (Conventional Commits)
+```
+feat: nueva funcionalidad
+fix: corrección de bug
+refactor: refactorización sin cambio funcional
+docs: documentación
+chore: tareas de mantenimiento
+```
 
-Convención de commits:
-
-* feat
-* fix
-* refactor
-* docs
-* chore
+**Ejemplo:**
+```bash
+git commit -m "feat: agregar sistema de reservas en calendario"
+git commit -m "fix: corregir políticas RLS de mis_reservas"
+```
 
 ---
 
-## ⚠️ Estado actual del proyecto
+## 📚 Recursos y referencias
 
-* Reestructuración del frontend completada.
-* Router funcional sin errores.
-* Dependencias actualizadas.
-* Supabase pendiente de integración final.
-* Algunas vistas aún son placeholders.
+- [Vue 3 Documentation](https://vuejs.org/)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [Supabase Docs](https://supabase.com/docs)
+- [Pinia Documentation](https://pinia.vuejs.org/)
+- [FullCalendar Vue](https://fullcalendar.io/docs/vue)
+
+---
+
+## 🎓 Habilidades demostradas en este proyecto
+
+- ✅ **Vue 3 Composition API** avanzado con composables
+- ✅ **TypeScript** con tipos complejos e interfaces
+- ✅ **Integración BaaS** (Supabase Auth + DB + RLS)
+- ✅ **Arquitectura escalable** con separación de responsabilidades
+- ✅ **Estado global** con Pinia
+- ✅ **Seguridad** con Row Level Security
+- ✅ **Validaciones de negocio** en frontend y backend
+- ✅ **UX profesional** con feedback visual y estados de carga
+- ✅ **Git workflow** con conventional commits
 
 ---
 
 ## 👤 Autor
 
-Juan Carlos Quiñonez Madrid
-Correo: [b4rc4drid@gmail.com](mailto:b4rc4drid@gmail.com)
+**Juan Carlos Quiñonez Madrid**  
+📧 Email: b4rc4drid@gmail.com  
+💼 LinkedIn: [tu-perfil](#)  
+🌐 Portfolio: [tu-portfolio](#)  
 
 ---
 
 ## 📄 Licencia
 
-Proyecto académico y privado.
+Este es un **proyecto académico y de portafolio**.  
+Código privado - No apto para uso comercial sin autorización.
 
 ---
 
-Proximo paso fase 3 donde vamos a quitar las vistas hardcodeadas y vamos a poner los valores reales de la bd
+## 🚀 Roadmap
 
-Última actualización: 29 de Diciembre 2025 fase 2 terminada con el detalle de registrarseview
+### Próximas funcionalidades (Fase 4)
+- [ ] Panel de instructor
+  - [ ] Calendario de clases asignadas
+  - [ ] Registro de asistencias
+  - [ ] Lista de clientes por clase
+- [ ] Panel administrativo
+  - [ ] Gestión de clientes
+  - [ ] Reportes de ventas
+  - [ ] Dashboard de métricas
 
+### Mejoras futuras (Fase 5)
+- [ ] Notificaciones por email (Supabase Edge Functions)
+- [ ] Subscripciones en tiempo real
+- [ ] App móvil con React Native
+- [ ] Sistema de pagos (Stripe)
+- [ ] Modo oscuro
+- [ ] Internacionalización (i18n)
 
+---
+
+**¿Preguntas o sugerencias?** Contacta al desarrollador.
+
+**Última actualización:** 30 de Diciembre, 2025
