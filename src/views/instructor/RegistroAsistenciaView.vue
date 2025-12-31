@@ -1,405 +1,772 @@
 <template>
   <div>
-
-
     <div class="registro-asistencia-view">
-      <!-- Contenido de Registro de Asistencia -->
       <div class="container">
-        <div class="card">
-          
-          <h1 class="title">Registro de Asistencia</h1>
+        <!-- ENCABEZADO -->
+        <div class="header">
+          <h1>📋 Registro de Asistencia</h1>
+          <p class="subtitle">Marca quién asistió a tus clases pasadas</p>
+        </div>
 
-          <div class="class-header">
-            <p>Clase: Pilates en Reformer - Intermedio</p>
-            <h2>Jueves, 17 de Octubre | 18:00 hrs</h2>
-            <div class="details">
-              <span>Instructor(a): Ana Gómez</span>
-              <span>Reservas: <span style="color: #FFBB41;">10 / 12</span></span>
+        <!-- LOADING -->
+        <div v-if="cargando" class="loading">
+          <div class="spinner"></div>
+          <p>Cargando clases pasadas...</p>
+        </div>
+
+        <!-- SIN CLASES -->
+        <div v-else-if="clasesPasadas.length === 0" class="no-clases">
+          <div class="empty-state">
+            <span class="empty-icon">📅</span>
+            <h3>No hay clases pasadas</h3>
+            <p>Cuando tengas clases con estudiantes registrados, aparecerán aquí para marcar asistencia.</p>
+          </div>
+        </div>
+
+        <!-- LISTA DE CLASES -->
+        <div v-else class="clases-lista">
+          <div 
+            v-for="clase in clasesPasadas" 
+            :key="clase.id"
+            class="clase-card"
+            @click="seleccionarClase(clase)"
+          >
+            <div class="clase-fecha">
+              <div class="fecha-dia">{{ formatearFechaCorta(clase.fecha) }}</div>
+              <div class="fecha-hora">
+                {{ clase.hora_inicio.substring(0, 5) }} - {{ clase.hora_fin.substring(0, 5) }}
+              </div>
             </div>
-          </div>
 
-          <div class="bulk-actions">
-            <button @click="marcarTodos">Marcar todos presentes</button>
-            <button @click="desmarcarTodos">Desmarcar todos</button>
-          </div>
-
-          <div class="attendance-list">
-            
-            <div 
-              v-for="cliente in clientes" 
-              :key="cliente.id" 
-              :class="['client-row', { 'absent': !cliente.presente, 'no-saldo': cliente.saldo === 0 }]"
-            >
-              <label :for="'client-' + cliente.id" class="client-row-label">
-                <input 
-                  type="checkbox" 
-                  :id="'client-' + cliente.id" 
-                  class="custom-checkbox" 
-                  v-model="cliente.presente"
-                  :disabled="cliente.saldo === 0"
+            <div class="clase-info">
+              <div class="clase-estudiantes">
+                <span class="icon">👥</span>
+                <span>{{ clase.reservas.length }} estudiante(s)</span>
+              </div>
+              
+              <div class="clase-estado">
+                <span 
+                  v-if="clase.reservas.every(r => r.asistio !== null)"
+                  class="badge badge-success"
                 >
-                <div class="client-info">
-                  <p :class="['name', { 'name-absent': !cliente.presente && cliente.saldo > 0 }]">
-                    {{ cliente.nombre }}
-                  </p>
-                  <p class="details-text">{{ cliente.cama }} | Paquete: {{ cliente.paquete }}</p>
-                  <p v-if="cliente.saldo > 0" class="saldo">
-                    Clases restantes: <span class="old-count">{{ cliente.saldo }}</span> → 
-                    <span :class="['new-count', cliente.presente ? 'saldo-green' : 'saldo-default']">
-                      {{ cliente.presente ? cliente.saldo - 1 : cliente.saldo }}
-                    </span>
-                  </p>
-                  <p v-else class="saldo-alert">🚨 Sin saldo: 0 clases</p>
-                </div>
-                <span v-if="cliente.saldo === 0" class="badge-alert">Debe renovar paquete</span>
-              </label>
+                  ✅ Completo
+                </span>
+                <span 
+                  v-else
+                  class="badge badge-pending"
+                >
+                  ⏳ Pendiente
+                </span>
+              </div>
             </div>
 
+            <div class="clase-arrow">→</div>
           </div>
-          
-          <div v-if="mensajeConfirmacion" :class="['confirmation-message', mensajeTipo]">
-            {{ mensajeConfirmacion }}
-          </div>
+        </div>
 
-          <button @click="guardarAsistencia" class="btn-save">
-            💾 Guardar Asistencia
-          </button>
-
+        <!-- INFO BOX -->
+        <div v-if="!cargando && clasesPasadas.length > 0" class="info-box">
+          <h3>💡 Instrucciones:</h3>
+          <ul>
+            <li>Haz clic en una clase para ver la lista de estudiantes</li>
+            <li>Marca quién asistió (✅) y quién faltó (❌)</li>
+            <li>Las asistencias se guardan automáticamente</li>
+            <li>Solo se muestran las últimas 20 clases pasadas con reservas</li>
+          </ul>
         </div>
       </div>
+
+      <!-- MODAL DE DETALLES -->
+      <Teleport to="body">
+        <div v-if="claseSeleccionada" class="modal" @click.self="cerrarDetalles">
+          <div class="modal-content">
+            <button class="btn-close" @click="cerrarDetalles">✕</button>
+            
+            <h2>📋 Registro de Asistencia</h2>
+            
+            <!-- INFO DE LA CLASE -->
+            <div class="clase-detalle">
+              <div class="detalle-item">
+                <span class="label">📅 Fecha:</span>
+                <span class="valor">{{ formatearFecha(claseSeleccionada.fecha) }}</span>
+              </div>
+              
+              <div class="detalle-item">
+                <span class="label">🕐 Horario:</span>
+                <span class="valor">
+                  {{ claseSeleccionada.hora_inicio.substring(0, 5) }} - 
+                  {{ claseSeleccionada.hora_fin.substring(0, 5) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- RESUMEN -->
+            <div class="resumen">
+              <div class="resumen-item">
+                <span class="resumen-label">✅ Asistieron</span>
+                <span class="resumen-valor">{{ totalAsistencias }}</span>
+              </div>
+              <div class="resumen-item">
+                <span class="resumen-label">❌ Faltaron</span>
+                <span class="resumen-valor">{{ totalFaltas }}</span>
+              </div>
+              <div class="resumen-item">
+                <span class="resumen-label">⏳ Pendientes</span>
+                <span class="resumen-valor">{{ totalPendientes }}</span>
+              </div>
+            </div>
+
+            <!-- LISTA DE ESTUDIANTES -->
+            <div class="estudiantes-lista">
+              <h3>👥 Estudiantes ({{ claseSeleccionada.reservas.length }})</h3>
+              
+              <div 
+                v-for="(reserva, index) in claseSeleccionada.reservas" 
+                :key="reserva.id"
+                class="estudiante-card"
+              >
+                <div class="estudiante-numero">{{ index + 1 }}</div>
+                
+                <div class="estudiante-info">
+                  <p class="estudiante-nombre">{{ reserva.cliente_nombre }}</p>
+                  <p class="estudiante-telefono">📞 {{ reserva.cliente_telefono }}</p>
+                </div>
+
+                <div class="estudiante-acciones">
+                  <button
+                    class="btn-asistio"
+                    :class="{ active: reserva.asistio === true }"
+                    @click="marcarAsistencia(reserva.id, true)"
+                  >
+                    ✅ Asistió
+                  </button>
+                  <button
+                    class="btn-falto"
+                    :class="{ active: reserva.asistio === false }"
+                    @click="marcarAsistencia(reserva.id, false)"
+                  >
+                    ❌ Faltó
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- BOTONES -->
+            <div class="modal-buttons">
+              <button 
+                class="btn-secondary" 
+                @click="cerrarDetalles"
+              >
+                Cerrar
+              </button>
+              <button 
+                v-if="!todosMarcados"
+                class="btn-primary" 
+                disabled
+              >
+                ⚠️ Marca todos primero
+              </button>
+              <button 
+                v-else
+                class="btn-success" 
+                @click="guardarTodasAsistencias"
+                :disabled="guardando"
+              >
+                {{ guardando ? 'Guardando...' : '✅ Confirmar Registro' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useRegistroAsistencia } from '@/composables/useRegistroAsistencia'
 
-import { ref } from 'vue'
+// ============================================
+// USAR EL COMPOSABLE
+// ============================================
 
-interface Cliente {
-  id: number
-  nombre: string
-  cama: string
-  paquete: string
-  saldo: number
-  presente: boolean
-}
-
-// Estado para los clientes
-const clientes = ref<Cliente[]>([
-  {
-    id: 1,
-    nombre: 'Ana López Pérez',
-    cama: 'Cama #3',
-    paquete: 'Mensual',
-    saldo: 11,
-    presente: true
-  },
-  {
-    id: 2,
-    nombre: 'María González',
-    cama: 'Cama #5',
-    paquete: 'Semanal',
-    saldo: 3,
-    presente: false
-  },
-  {
-    id: 3,
-    nombre: 'Jesús Vázquez',
-    cama: 'Cama #1',
-    paquete: 'Básico',
-    saldo: 0,
-    presente: false
-  }
-])
-
-const mensajeConfirmacion = ref('')
-const mensajeTipo = ref('')
-
-const marcarTodos = () => {
-  let marcados = 0
-  clientes.value.forEach(cliente => {
-    if (cliente.saldo > 0) {
-      cliente.presente = true
-      marcados++
-    }
-  })
-  mostrarMensaje(`Se intentó marcar a ${marcados} clientes. Revisar alertas de saldo.`, 'warning')
-}
-
-const desmarcarTodos = () => {
-  clientes.value.forEach(cliente => {
-    if (cliente.saldo > 0) {
-      cliente.presente = false
-    }
-  })
-}
-
-const guardarAsistencia = () => {
-  let descontadas = 0
-  
-  clientes.value.forEach(cliente => {
-    if (cliente.presente && cliente.saldo > 0) {
-      cliente.saldo -= 1
-      descontadas++
-    }
-  })
-
-  mostrarMensaje(`Asistencia registrada correctamente. Se descontaron ${descontadas} clase(s).`, 'success')
-}
-
-const mostrarMensaje = (mensaje: string, tipo: string) => {
-  mensajeConfirmacion.value = mensaje
-  mensajeTipo.value = tipo
-  
-  setTimeout(() => {
-    mensajeConfirmacion.value = ''
-  }, 5000)
-}
+const {
+  cargando,
+  guardando,
+  clasesPasadas,
+  claseSeleccionada,
+  totalAsistencias,
+  totalFaltas,
+  totalPendientes,
+  todosMarcados,
+  seleccionarClase,
+  cerrarDetalles,
+  marcarAsistencia,
+  guardarTodasAsistencias,
+  formatearFecha,
+  formatearFechaCorta
+} = useRegistroAsistencia()
 </script>
 
 <style scoped>
+/* ============================================
+   ESTILOS GENERALES
+   ============================================ */
+
 .registro-asistencia-view {
-  margin: 0;
-  padding: 0;
-  background: #1E1E1E;
-  font-family: Arial, sans-serif;
-  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
   min-height: 100vh;
 }
 
-/* Container */
 .container {
-  display: flex;
-  justify-content: center;
-  margin-top: 40px;
-  padding: 0 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
-.card {
-  width: 75%;
-  max-width: 900px;
-  min-width: 300px;
-  background: #2C2C2C;
-  padding: 40px;
-  border-radius: 5px;
+/* ============================================
+   ENCABEZADO
+   ============================================ */
+
+.header {
+  margin-bottom: 30px;
 }
 
-.title {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-/* Class Header */
-.class-header {
-  background: #3A3A3A;
-  padding: 20px;
-  border-radius: 5px;
-  margin-bottom: 25px;
-  border-left: 5px solid #FFBB41;
-}
-
-.class-header h2 {
-  font-size: 20px;
-  margin: 0 0 5px 0;
-}
-
-.class-header p {
-  margin: 0;
-  font-size: 14px;
-  color: #D1D5DB;
-}
-
-.class-header .details {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-  font-weight: bold;
-}
-
-/* Bulk Actions */
-.bulk-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.bulk-actions button {
-  background: #3A3A3A;
-  color: white;
-  padding: 8px 15px;
-  border: 1px solid #555;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.3s;
-  font-size: 12px;
-}
-
-.bulk-actions button:hover {
-  background: #4A4A4A;
-}
-
-/* Client Row */
-.client-row {
-  background: #3A3A3A;
-  border-radius: 5px;
+h1 {
+  color: #667eea;
   margin-bottom: 10px;
-  transition: background 0.2s;
+  font-size: 2em;
 }
 
-.client-row.absent {
-  background: #3A3A3A80;
+.subtitle {
+  color: #666;
+  font-size: 0.95em;
 }
 
-.client-row.no-saldo {
-  background: #F4433620;
-  border-left: 5px solid #F44336;
-  opacity: 0.7;
-  pointer-events: none;
+/* ============================================
+   LOADING
+   ============================================ */
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
 }
 
-.client-row-label {
-  display: flex;
-  align-items: center;
-  padding: 15px 20px;
-  cursor: pointer;
-  user-select: none;
-  width: 100%;
-  box-sizing: border-box;
+.spinner {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 20px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.client-info {
-  flex-grow: 1;
-  padding: 0 15px;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.client-info p {
-  margin: 0;
-}
-
-.name {
-  font-weight: bold;
+.loading p {
+  color: #666;
   font-size: 16px;
 }
 
-.name-absent {
-  color: #D1D5DB;
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.no-clases {
+  padding: 60px 20px;
 }
 
-.details-text {
-  font-size: 12px;
-  color: #D1D5DB;
-  margin-top: 2px;
+.empty-state {
+  text-align: center;
+  background: #f8f9fa;
+  padding: 50px 30px;
+  border-radius: 15px;
 }
 
-.saldo {
-  font-size: 14px;
-  font-weight: bold;
-  margin-top: 5px;
+.empty-icon {
+  font-size: 80px;
+  display: block;
+  margin-bottom: 20px;
 }
 
-.saldo-green {
-  color: #4CAF50;
+.empty-state h3 {
+  color: #667eea;
+  margin-bottom: 15px;
+  font-size: 1.5em;
 }
 
-.saldo-default {
-  color: white;
+.empty-state p {
+  color: #666;
+  font-size: 1em;
+  line-height: 1.6;
 }
 
-.saldo-alert {
-  color: #F44336;
-  font-weight: bold;
-  font-size: 14px;
+/* ============================================
+   LISTA DE CLASES
+   ============================================ */
+
+.clases-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
 }
 
-.badge-alert {
-  background: #F44336;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: bold;
-}
-
-/* Custom Checkbox */
-.custom-checkbox {
-  appearance: none;
-  width: 30px;
-  height: 30px;
-  border: 2px solid #D1D5DB;
-  border-radius: 4px;
+.clase-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border-left: 5px solid #667eea;
   cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clase-card:hover {
+  background: #e9ecef;
+  transform: translateX(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.clase-fecha {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 10px 15px;
+  background: white;
+  border-radius: 10px;
+  border: 2px solid #667eea;
+}
+
+.fecha-dia {
+  font-weight: 700;
+  color: #667eea;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.fecha-hora {
+  font-size: 13px;
+  color: #666;
+  font-weight: 600;
+}
+
+.clase-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.clase-estudiantes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: #333;
+  font-weight: 600;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+.clase-estado {
+  margin-left: auto;
+}
+
+.badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.clase-arrow {
+  font-size: 24px;
+  color: #667eea;
+  font-weight: 700;
+}
+
+/* ============================================
+   INFO BOX
+   ============================================ */
+
+.info-box {
+  background: #f0f4ff;
+  border-left: 4px solid #667eea;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.info-box h3 {
+  color: #667eea;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.info-box ul {
+  margin-left: 20px;
+  color: #555;
+}
+
+.info-box li {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+
+.modal {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  animation: fadeIn 0.3s;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
   position: relative;
+  background: white;
+  padding: 30px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 15px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.btn-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  background: #e0e0e0;
+  color: #666;
+  font-size: 20px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-close:hover {
+  background: #d0d0d0;
+}
+
+.modal h2 {
+  color: #667eea;
+  margin-bottom: 25px;
+  padding-right: 40px;
+}
+
+/* ============================================
+   DETALLE DE CLASE
+   ============================================ */
+
+.clase-detalle {
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.detalle-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.detalle-item:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
+}
+
+.valor {
+  color: #333;
+  font-size: 14px;
+  text-align: right;
+}
+
+/* ============================================
+   RESUMEN
+   ============================================ */
+
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.resumen-item {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.resumen-label {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.resumen-valor {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+/* ============================================
+   ESTUDIANTES
+   ============================================ */
+
+.estudiantes-lista {
+  margin-bottom: 25px;
+}
+
+.estudiantes-lista h3 {
+  color: #667eea;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.estudiante-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  border-left: 4px solid #667eea;
+}
+
+.estudiante-numero {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 14px;
   flex-shrink: 0;
 }
 
-.custom-checkbox:checked {
-  background-color: #FFBB41;
-  border-color: #FFBB41;
+.estudiante-info {
+  flex: 1;
 }
 
-.custom-checkbox:checked::after {
-  content: '✓';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #000;
-  font-size: 18px;
-  font-weight: bold;
+.estudiante-nombre {
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 5px 0;
+  font-size: 15px;
 }
 
-.custom-checkbox:disabled {
+.estudiante-telefono {
+  color: #666;
+  margin: 0;
+  font-size: 13px;
+}
+
+.estudiante-acciones {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-asistio,
+.btn-falto {
+  padding: 8px 16px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.btn-asistio {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-asistio:hover {
+  background: #28a745;
+  color: white;
+}
+
+.btn-asistio.active {
+  background: #28a745;
+  color: white;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.2);
+}
+
+.btn-falto {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-falto:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-falto.active {
+  background: #dc3545;
+  color: white;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.2);
+}
+
+/* ============================================
+   BOTONES MODAL
+   ============================================ */
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-buttons button {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.btn-secondary:hover {
+  background: #d0d0d0;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Save Button */
-.btn-save {
-  width: 100%;
-  background: #4CAF50;
-  padding: 15px;
-  border: none;
-  font-size: 16px;
-  margin-top: 20px;
-  cursor: pointer;
-  border-radius: 5px;
-  color: black;
-  font-weight: bold;
-  box-shadow: 0 4px #388E3C;
+.btn-success {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
 }
 
-.btn-save:hover {
-  background: #45A049;
+.btn-success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(17, 153, 142, 0.3);
 }
 
-/* Confirmation Message */
-.confirmation-message {
-  padding: 15px;
-  border-radius: 5px;
-  text-align: center;
-  font-weight: bold;
-  margin-top: 15px;
+.btn-success:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
-.success {
-  background: #4CAF5020;
-  border: 1px solid #4CAF50;
-  color: #4CAF50;
-}
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 
-.warning {
-  background: #FFBB4120;
-  border: 1px solid #FFBB41;
-  color: #FFBB41;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
-  .card {
+  .container {
+    padding: 15px;
+  }
+
+  .clase-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .clase-arrow {
+    display: none;
+  }
+
+  .resumen {
+    grid-template-columns: 1fr;
+  }
+
+  .estudiante-acciones {
     width: 100%;
-    padding: 20px;
+  }
+
+  .btn-asistio,
+  .btn-falto {
+    flex: 1;
+  }
+
+  .modal-buttons {
+    flex-direction: column;
   }
 }
 </style>
