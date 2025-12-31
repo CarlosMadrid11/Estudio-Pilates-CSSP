@@ -311,6 +311,7 @@ export function useCalendarCliente() {
         .update({ clases_restantes: paqueteData.clases_restantes - 1 })
         .eq('id', paqueteActivoId.value)
 
+        // Era error en las politicas de supabase, creamos politica para que el mismo cliente pueda hacer un update y cancelar y registrar reservas
       // PASO 9: Éxito
       alert(
         `✅ ¡Reserva confirmada!\n\n` +
