@@ -13,6 +13,11 @@ import { useAuthStore } from '@/stores/auth'
 // TIPOS E INTERFACES
 // ============================================
 
+export interface ClienteReserva {
+  nombre_completo: string
+  telefono: string
+}
+
 export interface ClaseInstructor {
   id: string
   fecha: string
@@ -20,10 +25,7 @@ export interface ClaseInstructor {
   hora_fin: string
   capacidad_maxima: number
   capacidad_actual: number
-  clientes: {
-    nombre_completo: string
-    telefono: string
-  }[]
+  clientes: ClienteReserva[]
 }
 
 export interface EventoCalendario {
@@ -37,7 +39,7 @@ export interface EventoCalendario {
     clase_id: string
     capacidad_actual: number
     capacidad_maxima: number
-    clientes: any[]
+    clientes: ClienteReserva[]
   }
 }
 
@@ -160,8 +162,10 @@ export function useCalendarioInstructor() {
       console.log('✅ Clases obtenidas:', clasesData)
 
       // Mapear a eventos del calendario
-      const eventos: EventoCalendario[] = (clasesData || []).map((clase) => {
-        const porcentaje = (clase.capacidad_actual / clase.capacidad_maxima) * 100
+      const eventos: EventoCalendario[] = ((clasesData || []) as Record<string, unknown>[]).map((clase) => {
+        const capacidadActual = clase.capacidad_actual as number
+        const capacidadMaxima = clase.capacidad_maxima as number
+        const porcentaje = (capacidadActual / capacidadMaxima) * 100
         
         // Determinar color según ocupación
         let backgroundColor = '#95a5a6' // Gris - vacío
@@ -170,27 +174,33 @@ export function useCalendarioInstructor() {
         if (porcentaje === 100) backgroundColor = '#e74c3c' // Rojo - llena
 
         // Filtrar solo reservas confirmadas
-        const reservasConfirmadas = clase.mis_reservas?.filter(
-          (r: any) => r.estado === 'confirmada'
-        ) || []
+        const misReservas = clase.mis_reservas as Record<string, unknown>[] | undefined
+        const reservasConfirmadas = (misReservas || []).filter(
+          (r) => r.estado === 'confirmada'
+        )
 
         // Extraer info de clientes
-        const clientes = reservasConfirmadas.map((r: any) => ({
-          nombre_completo: r.clientes?.profiles?.nombre_completo || 'Sin nombre',
-          telefono: r.clientes?.profiles?.telefono || 'N/A'
-        }))
+        const clientes: ClienteReserva[] = reservasConfirmadas.map((r) => {
+          const clienteData = r.clientes as Record<string, unknown> | undefined
+          const profilesData = clienteData?.profiles as Record<string, unknown> | undefined
+          
+          return {
+            nombre_completo: (profilesData?.nombre_completo as string) || 'Sin nombre',
+            telefono: (profilesData?.telefono as string) || 'N/A'
+          }
+        })
 
         return {
-          id: clase.id,
-          title: `Clase Pilates (${clase.capacidad_actual}/${clase.capacidad_maxima})`,
+          id: clase.id as string,
+          title: `Clase Pilates (${capacidadActual}/${capacidadMaxima})`,
           start: `${clase.fecha}T${clase.hora_inicio}`,
           end: `${clase.fecha}T${clase.hora_fin}`,
           backgroundColor,
           borderColor: backgroundColor,
           extendedProps: {
-            clase_id: clase.id,
-            capacidad_actual: clase.capacidad_actual,
-            capacidad_maxima: clase.capacidad_maxima,
+            clase_id: clase.id as string,
+            capacidad_actual: capacidadActual,
+            capacidad_maxima: capacidadMaxima,
             clientes
           }
         }
@@ -288,15 +298,21 @@ export function useCalendarioInstructor() {
       }
 
       // Filtrar reservas confirmadas
-      const reservasConfirmadas = data.mis_reservas?.filter(
-        (r: any) => r.estado === 'confirmada'
-      ) || []
+      const misReservas = data.mis_reservas as Record<string, unknown>[] | undefined
+      const reservasConfirmadas = (misReservas || []).filter(
+        (r) => r.estado === 'confirmada'
+      )
 
       // Mapear clientes
-      const clientes = reservasConfirmadas.map((r: any) => ({
-        nombre_completo: r.clientes?.profiles?.nombre_completo || 'Sin nombre',
-        telefono: r.clientes?.profiles?.telefono || 'N/A'
-      }))
+      const clientes: ClienteReserva[] = reservasConfirmadas.map((r) => {
+        const clienteData = r.clientes as Record<string, unknown> | undefined
+        const profilesData = clienteData?.profiles as Record<string, unknown> | undefined
+        
+        return {
+          nombre_completo: (profilesData?.nombre_completo as string) || 'Sin nombre',
+          telefono: (profilesData?.telefono as string) || 'N/A'
+        }
+      })
 
       claseSeleccionada.value = {
         id: data.id,

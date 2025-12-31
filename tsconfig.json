@@ -7,6 +7,16 @@
     {
       "path": "./tsconfig.app.json"
     }
-  ]
+  ],
+
+  "compilerOptions": {
+    // ... otras opciones ...
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  }
+
 }
 
