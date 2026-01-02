@@ -55,7 +55,8 @@ export function useCalendarCliente() {
 
   const fechaFormateada = computed((): string => {
     if (!fechaSeleccionada.value) return ''
-    const date = new Date(fechaSeleccionada.value + 'T00:00:00')
+    const [year, month, day] = fechaSeleccionada.value.split('-')
+    const date = new Date(Number(year), Number(month) - 1, Number(day))
     return date.toLocaleDateString('es-MX', {
       weekday: 'long',
       year: 'numeric',
@@ -78,6 +79,7 @@ export function useCalendarCliente() {
       plugins: [dayGridPlugin, interactionPlugin],
       initialView: 'dayGridMonth',
       locale: esLocale,
+      timeZone: 'local',
       
       headerToolbar: {
         left: 'prev,next today',
@@ -98,7 +100,8 @@ export function useCalendarCliente() {
       
       // Click en un día
       dateClick: (info: DateClickArg): void => {
-        const fechaClick = new Date(info.dateStr + 'T00:00:00')
+        const [year, month, day] = info.dateStr.split('-')
+        const fechaClick = new Date(Number(year), Number(month) - 1, Number(day))
         const hoy = new Date()
         hoy.setHours(0, 0, 0, 0)
         
@@ -311,7 +314,6 @@ export function useCalendarCliente() {
         .update({ clases_restantes: paqueteData.clases_restantes - 1 })
         .eq('id', paqueteActivoId.value)
 
-        // Era error en las politicas de supabase, creamos politica para que el mismo cliente pueda hacer un update y cancelar y registrar reservas
       // PASO 9: Éxito
       alert(
         `✅ ¡Reserva confirmada!\n\n` +
