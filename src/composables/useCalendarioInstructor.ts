@@ -33,6 +33,7 @@ export interface EventoCalendario {
   title: string
   start: string
   end: string
+  allDay: boolean
   backgroundColor: string
   borderColor: string
   extendedProps: {
@@ -80,10 +81,10 @@ export function useCalendarioInstructor() {
 
   const colorEstado = computed((): string => {
     const porcentaje = porcentajeOcupacion.value
-    if (porcentaje === 0) return '#95a5a6'      // Gris
-    if (porcentaje < 50) return '#3498db'       // Azul
-    if (porcentaje < 100) return '#f39c12'      // Naranja
-    return '#e74c3c'                             // Rojo
+    if (porcentaje === 0) return '#95a5a6'
+    if (porcentaje < 50) return '#3498db'
+    if (porcentaje < 100) return '#f39c12'
+    return '#e74c3c'
   })
 
   // ============================================
@@ -120,7 +121,6 @@ export function useCalendarioInstructor() {
     try {
       console.log('📅 Cargando clases del instructor...')
 
-      // Obtener ID del instructor
       const idInstructor = await obtenerInstructorId()
       
       if (!idInstructor) {
@@ -129,7 +129,6 @@ export function useCalendarioInstructor() {
 
       instructorId.value = idInstructor
 
-      // Obtener clases del instructor con clientes reservados
       const { data: clasesData, error: clasesError } = await supabase
         .from('clases')
         .select(`
@@ -161,25 +160,21 @@ export function useCalendarioInstructor() {
 
       console.log('✅ Clases obtenidas:', clasesData)
 
-      // Mapear a eventos del calendario
       const eventos: EventoCalendario[] = ((clasesData || []) as Record<string, unknown>[]).map((clase) => {
         const capacidadActual = clase.capacidad_actual as number
         const capacidadMaxima = clase.capacidad_maxima as number
         const porcentaje = (capacidadActual / capacidadMaxima) * 100
         
-        // Determinar color según ocupación
-        let backgroundColor = '#95a5a6' // Gris - vacío
-        if (porcentaje > 0 && porcentaje < 50) backgroundColor = '#3498db' // Azul - baja
-        if (porcentaje >= 50 && porcentaje < 100) backgroundColor = '#f39c12' // Naranja - media
-        if (porcentaje === 100) backgroundColor = '#e74c3c' // Rojo - llena
+        let backgroundColor = '#95a5a6'
+        if (porcentaje > 0 && porcentaje < 50) backgroundColor = '#3498db'
+        if (porcentaje >= 50 && porcentaje < 100) backgroundColor = '#f39c12'
+        if (porcentaje === 100) backgroundColor = '#e74c3c'
 
-        // Filtrar solo reservas confirmadas
         const misReservas = clase.mis_reservas as Record<string, unknown>[] | undefined
         const reservasConfirmadas = (misReservas || []).filter(
           (r) => r.estado === 'confirmada'
         )
 
-        // Extraer info de clientes
         const clientes: ClienteReserva[] = reservasConfirmadas.map((r) => {
           const clienteData = r.clientes as Record<string, unknown> | undefined
           const profilesData = clienteData?.profiles as Record<string, unknown> | undefined
@@ -195,6 +190,7 @@ export function useCalendarioInstructor() {
           title: `Clase Pilates (${capacidadActual}/${capacidadMaxima})`,
           start: `${clase.fecha}T${clase.hora_inicio}`,
           end: `${clase.fecha}T${clase.hora_fin}`,
+          allDay: false,
           backgroundColor,
           borderColor: backgroundColor,
           extendedProps: {
@@ -228,13 +224,13 @@ export function useCalendarioInstructor() {
       return
     }
 
-    // Cargar eventos desde BD
     const eventos = await cargarClases()
 
     const calendarOptions: CalendarOptions = {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
       initialView: 'dayGridMonth',
       locale: esLocale,
+      timeZone: 'local',
       
       headerToolbar: {
         left: 'prev,next today',
@@ -246,13 +242,12 @@ export function useCalendarioInstructor() {
       slotMaxTime: '21:00:00',
       allDaySlot: false,
       
-      editable: false, // READ ONLY
+      editable: false,
       selectable: false,
       dayMaxEvents: true,
       
       events: eventos,
       
-      // Click en evento para ver detalles
       eventClick: async (info: EventClickArg): Promise<void> => {
         await mostrarDetallesClase(info.event.id)
       }
@@ -297,13 +292,11 @@ export function useCalendarioInstructor() {
         throw new Error('No se encontró la clase')
       }
 
-      // Filtrar reservas confirmadas
       const misReservas = data.mis_reservas as Record<string, unknown>[] | undefined
       const reservasConfirmadas = (misReservas || []).filter(
         (r) => r.estado === 'confirmada'
       )
 
-      // Mapear clientes
       const clientes: ClienteReserva[] = reservasConfirmadas.map((r) => {
         const clienteData = r.clientes as Record<string, unknown> | undefined
         const profilesData = clienteData?.profiles as Record<string, unknown> | undefined
@@ -363,10 +356,7 @@ export function useCalendarioInstructor() {
 
     const eventos = await cargarClases()
     
-    // Limpiar eventos actuales
     calendar.getEvents().forEach(event => event.remove())
-    
-    // Agregar nuevos eventos
     eventos.forEach(evento => calendar?.addEvent(evento))
   }
 
@@ -375,7 +365,8 @@ export function useCalendarioInstructor() {
   // ============================================
 
   const formatearFecha = (fecha: string): string => {
-    const date = new Date(fecha + 'T00:00:00')
+    const [year, month, day] = fecha.split('-')
+    const date = new Date(Number(year), Number(month) - 1, Number(day))
     return date.toLocaleDateString('es-MX', {
       weekday: 'long',
       year: 'numeric',
@@ -397,18 +388,13 @@ export function useCalendarioInstructor() {
   // ============================================
 
   return {
-    // Referencias
     calendarEl,
     modalDetalles,
     claseSeleccionada,
     cargandoClases,
-    
-    // Computed
     porcentajeOcupacion,
     estadoClase,
     colorEstado,
-    
-    // Métodos
     cerrarModal,
     cambiarVista,
     recargarClases,
