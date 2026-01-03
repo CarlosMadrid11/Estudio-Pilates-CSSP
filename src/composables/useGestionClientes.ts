@@ -46,7 +46,6 @@ export interface ClienteListado {
   clases_disponibles: number
 }
 
-
 // ============================================
 // COMPOSABLE PRINCIPAL
 // ============================================
@@ -129,8 +128,8 @@ export function useGestionClientes() {
 
       // Mapear datos
       clientes.value = ((clientesData || []) as Record<string, unknown>[]).map((cliente) => {
-        const profileData = cliente.profiles as Record<string, unknown> | undefined
-        const paquetesData = (cliente.mis_paquetes as Record<string, unknown>[] | undefined) || []
+        const profileData = cliente.profiles as unknown as Record<string, unknown> | undefined
+        const paquetesData = (cliente.mis_paquetes as unknown as Record<string, unknown>[] | undefined) || []
 
         const paquetesActivos = paquetesData.filter(p => p.activo === true)
         const clasesDisponibles = paquetesActivos.reduce(
@@ -186,7 +185,7 @@ export function useGestionClientes() {
         throw new Error('No se encontró el cliente')
       }
 
-      const profileData = clienteData.profiles as Record<string, unknown> | undefined
+      const profileData = clienteData.profiles as unknown as Record<string, unknown> | undefined
 
       // Obtener paquetes
       const { data: paquetesData, error: paquetesError } = await supabase
@@ -210,7 +209,7 @@ export function useGestionClientes() {
       }
 
       const paquetes: PaqueteCliente[] = ((paquetesData || []) as Record<string, unknown>[]).map((p) => {
-        const paqueteInfo = p.paquetes as Record<string, unknown> | undefined
+        const paqueteInfo = p.paquetes as unknown as Record<string, unknown> | undefined
         
         return {
           id: p.id as string,
@@ -245,7 +244,7 @@ export function useGestionClientes() {
       }
 
       const reservas: ReservaCliente[] = ((reservasData || []) as Record<string, unknown>[]).map((r) => {
-        const claseData = r.clases as Record<string, unknown> | undefined
+        const claseData = r.clases as unknown as Record<string, unknown> | undefined
         
         return {
           id: r.id as string,
