@@ -108,7 +108,6 @@ export function useGestionClientes() {
           direccion,
           profiles (
             nombre_completo,
-            email,
             telefono
           ),
           mis_paquetes (
