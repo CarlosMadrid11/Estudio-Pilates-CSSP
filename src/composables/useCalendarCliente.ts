@@ -24,6 +24,29 @@ export interface HorarioDisponible {
 }
 
 // ============================================
+// HELPER: Comparar fechas sin timezone issues
+// ============================================
+
+/**
+ * Compara dos fechas en formato string YYYY-MM-DD
+ * Retorna true si fecha1 >= fecha2
+ */
+const compararFechas = (fecha1: string, fecha2: string): boolean => {
+  return fecha1 >= fecha2
+}
+
+/**
+ * Obtiene fecha de hoy en formato YYYY-MM-DD (sin timezone)
+ */
+const obtenerFechaHoy = (): string => {
+  const hoy = new Date()
+  const year = hoy.getFullYear()
+  const month = String(hoy.getMonth() + 1).padStart(2, '0')
+  const day = String(hoy.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// ============================================
 // COMPOSABLE PRINCIPAL
 // ============================================
 
@@ -55,8 +78,11 @@ export function useCalendarCliente() {
 
   const fechaFormateada = computed((): string => {
     if (!fechaSeleccionada.value) return ''
+    
+    // ✅ CORRECCIÓN: Parseamos manualmente para evitar timezone
     const [year, month, day] = fechaSeleccionada.value.split('-')
     const date = new Date(Number(year), Number(month) - 1, Number(day))
+    
     return date.toLocaleDateString('es-MX', {
       weekday: 'long',
       year: 'numeric',
@@ -79,7 +105,7 @@ export function useCalendarCliente() {
       plugins: [dayGridPlugin, interactionPlugin],
       initialView: 'dayGridMonth',
       locale: esLocale,
-      timeZone: 'local',
+      timeZone: 'local',  // ✅ IMPORTANTE: Mantener timezone local
       
       headerToolbar: {
         left: 'prev,next today',
@@ -93,20 +119,23 @@ export function useCalendarCliente() {
       dayMaxEvents: true,
       weekends: true,
       
-      // Deshabilitar días pasados
+      // ✅ CORRECCIÓN: Usar string directo sin conversión
       validRange: {
-        start: new Date().toISOString().split('T')[0]
+        start: obtenerFechaHoy()  // ← Función helper sin timezone
       },
       
       // Click en un día
       dateClick: (info: DateClickArg): void => {
-        const [year, month, day] = info.dateStr.split('-')
-        const fechaClick = new Date(Number(year), Number(month) - 1, Number(day))
-        const hoy = new Date()
-        hoy.setHours(0, 0, 0, 0)
+        // ✅ CORRECCIÓN: Comparar strings directamente, sin Date()
+        const fechaClick = info.dateStr  // Ya viene como '2026-01-09'
+        const hoy = obtenerFechaHoy()
         
-        if (fechaClick >= hoy) {
-          fechaSeleccionada.value = info.dateStr
+        console.log('📅 Click en fecha:', fechaClick)
+        console.log('📅 Hoy es:', hoy)
+        console.log('📅 ¿Válida?:', compararFechas(fechaClick, hoy))
+        
+        if (compararFechas(fechaClick, hoy)) {
+          fechaSeleccionada.value = fechaClick  // ← String puro, sin conversión
           horaSeleccionada.value = ''
           abrirModal()
         } else {
@@ -145,8 +174,10 @@ export function useCalendarCliente() {
 
     try {
       console.log('📅 Cargando horarios para:', fecha)
+      console.log('📅 Tipo de dato:', typeof fecha)
+      console.log('📅 Valor exacto:', JSON.stringify(fecha))
 
-      // Obtener clases del día desde Supabase
+      // ✅ CORRECTO: fecha es string '2026-01-09', Supabase lo maneja correctamente
       const { data: clasesData, error: clasesError } = await supabase
         .from('clases')
         .select(`
@@ -162,7 +193,7 @@ export function useCalendarCliente() {
             )
           )
         `)
-        .eq('fecha', fecha)
+        .eq('fecha', fecha)  // ← String directo, sin conversión
         .order('hora_inicio', { ascending: true })
 
       if (clasesError) {
@@ -210,6 +241,8 @@ export function useCalendarCliente() {
 
     try {
       console.log('📝 Confirmando reserva...')
+      console.log('📅 Fecha seleccionada:', fechaSeleccionada.value)
+      console.log('🕐 Hora seleccionada:', horaSeleccionada.value)
 
       // PASO 1: Obtener cliente_id
       const { data: clienteData, error: clienteError } = await supabase
@@ -223,20 +256,25 @@ export function useCalendarCliente() {
       }
 
       clienteId.value = clienteData.id
+      console.log('✅ Cliente ID:', clienteId.value)
 
       // PASO 2: Verificar paquete activo con clases
+      // ✅ CORRECCIÓN: Comparar fecha sin hora
+      const hoy = obtenerFechaHoy()
+      
       const { data: paqueteData, error: paqueteError } = await supabase
         .from('mis_paquetes')
         .select('id, clases_restantes, fecha_vencimiento')
         .eq('cliente_id', clienteId.value)
         .eq('activo', true)
         .gt('clases_restantes', 0)
-        .gte('fecha_vencimiento', new Date().toISOString())
+        .gte('fecha_vencimiento', hoy)  // ← String YYYY-MM-DD
         .order('fecha_vencimiento', { ascending: true })
         .limit(1)
         .single()
 
       if (paqueteError || !paqueteData) {
+        console.warn('⚠️ No hay paquete activo:', paqueteError)
         alert('❌ No tienes un paquete activo con clases disponibles.\n\nPor favor compra un paquete en la sección de Planes.')
         router.push('/planes')
         return
@@ -244,6 +282,7 @@ export function useCalendarCliente() {
 
       paqueteActivoId.value = paqueteData.id
       console.log('✅ Paquete activo:', paqueteActivoId.value)
+      console.log('📊 Clases restantes:', paqueteData.clases_restantes)
 
       // PASO 3: Obtener clase_id
       const horarioObj = horariosDisponibles.value.find(h => h.valor === horaSeleccionada.value)
@@ -253,6 +292,7 @@ export function useCalendarCliente() {
       }
 
       const claseId = horarioObj.clase_id
+      console.log('✅ Clase ID:', claseId)
 
       // PASO 4: Verificar reserva duplicada
       const { data: reservaDuplicada } = await supabase
@@ -277,13 +317,23 @@ export function useCalendarCliente() {
       }
 
       // PASO 6: Crear reserva
+      // ✅ CORRECCIÓN: fecha_reserva con timestamp correcto
+      const ahora = new Date()
+      const timestampReserva = ahora.toISOString()
+      
+      console.log('💾 Creando reserva...')
+      console.log('  - cliente_id:', clienteId.value)
+      console.log('  - clase_id:', claseId)
+      console.log('  - mi_paquete_id:', paqueteActivoId.value)
+      console.log('  - fecha_reserva:', timestampReserva)
+
       const { error: insertError } = await supabase
         .from('mis_reservas')
         .insert({
           cliente_id: clienteId.value,
           clase_id: claseId,
           mi_paquete_id: paqueteActivoId.value,
-          fecha_reserva: new Date().toISOString(),
+          fecha_reserva: timestampReserva,  // ← Timestamp con hora
           estado: 'confirmada'
         })
 
@@ -292,7 +342,7 @@ export function useCalendarCliente() {
         throw new Error(`Error: ${insertError.message}`)
       }
 
-      console.log('✅ Reserva creada')
+      console.log('✅ Reserva creada exitosamente')
 
       // PASO 7: Actualizar capacidad de clase
       const { data: claseActualData } = await supabase
@@ -302,31 +352,39 @@ export function useCalendarCliente() {
         .single()
 
       if (claseActualData) {
+        const nuevaCapacidad = (claseActualData.capacidad_actual || 0) + 1
+        console.log('📊 Actualizando capacidad:', nuevaCapacidad)
+        
         await supabase
           .from('clases')
-          .update({ capacidad_actual: (claseActualData.capacidad_actual || 0) + 1 })
+          .update({ capacidad_actual: nuevaCapacidad })
           .eq('id', claseId)
       }
 
       // PASO 8: Descontar clase del paquete
+      const nuevasClasesRestantes = paqueteData.clases_restantes - 1
+      console.log('📦 Actualizando paquete: clases restantes =', nuevasClasesRestantes)
+      
       await supabase
         .from('mis_paquetes')
-        .update({ clases_restantes: paqueteData.clases_restantes - 1 })
+        .update({ clases_restantes: nuevasClasesRestantes })
         .eq('id', paqueteActivoId.value)
 
       // PASO 9: Éxito
+      console.log('✅✅✅ RESERVA COMPLETADA EXITOSAMENTE')
+      
       alert(
         `✅ ¡Reserva confirmada!\n\n` +
         `📅 Fecha: ${fechaFormateada.value}\n` +
         `🕐 Hora: ${horarioObj.texto}\n\n` +
-        `Te quedan ${paqueteData.clases_restantes - 1} clases en tu paquete.`
+        `Te quedan ${nuevasClasesRestantes} clases en tu paquete.`
       )
 
       cerrarModal()
       router.push('/mis-reservas')
 
     } catch (error) {
-      console.error('❌ Error al confirmar:', error)
+      console.error('❌❌❌ Error al confirmar:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       alert(`❌ Error al confirmar la reserva:\n\n${errorMessage}`)
     }
