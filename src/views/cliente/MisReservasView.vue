@@ -151,7 +151,10 @@ const cargarReservas = async () => {
           mi_paquete_id: item.mi_paquete_id
         }
       })
-      .sort((a, b) => new Date(a.clase_fecha).getTime() - new Date(b.clase_fecha).getTime())
+      .sort((a, b) => {
+        // Comparar como strings YYYY-MM-DD (evita timezone)
+        return a.clase_fecha.localeCompare(b.clase_fecha)
+      })
 
     console.log('✅ Reservas procesadas:', reservas.value.length)
 
@@ -163,9 +166,14 @@ const cargarReservas = async () => {
   }
 }
 
-// Formatear fecha completa
+// ✅ CORREGIDO: Formatear fecha sin timezone issues
 const formatearFechaCompleta = (fecha: string): string => {
-  const date = new Date(fecha)
+  if (!fecha) return ''
+  
+  // Parsear manualmente para evitar conversión de timezone
+  const [year, month, day] = fecha.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  
   const hoy = new Date()
   const manana = new Date(hoy)
   manana.setDate(manana.getDate() + 1)
@@ -195,8 +203,11 @@ const esCancelable = (reserva: Reserva): boolean => {
     return false
   }
 
-  // Verificar que falten más de 2 horas para la clase
-  const fechaClase = new Date(`${reserva.clase_fecha}T${reserva.hora_inicio}`)
+  // ✅ CORREGIDO: Parsear fecha manualmente
+  const [year, month, day] = reserva.clase_fecha.split('-').map(Number)
+  const [hours, minutes] = reserva.hora_inicio.split(':').map(Number)
+  const fechaClase = new Date(year, month - 1, day, hours, minutes)
+  
   const ahora = new Date()
   const horasRestantes = (fechaClase.getTime() - ahora.getTime()) / (1000 * 60 * 60)
 
@@ -296,13 +307,6 @@ const cancelarReserva = async (reserva: Reserva) => {
       } else {
         console.log('✅ Clase devuelta al paquete')
       }
-    }
-
-    if (paqueteErrorGet) {
-      console.error('⚠️ Error al devolver clase:', paqueteErrorGet)
-      // No lanzamos error para no bloquear la UI
-    } else {
-      console.log('✅ Clase devuelta al paquete')
     }
 
     // PASO 3: Actualizar capacidad de la clase
