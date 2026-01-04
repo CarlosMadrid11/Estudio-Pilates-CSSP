@@ -13,8 +13,8 @@ Construir un sistema de gestión completo para estudios de Pilates que incluya:
 - ✅ **Gestión de clientes:** Registro, login, compra de paquetes, reserva de clases
 - ✅ **Dashboard personalizado:** Vista dinámica según rol de usuario
 - ✅ **Sistema de reservas:** Calendario interactivo con validaciones de negocio
-- ⏳ **Panel de instructor:** Visualización de clases y registro de asistencias
-- ⏳ **Panel administrativo:** Gestión de clientes y reportes
+- ✅ **Panel de instructor:** Visualización de clases y registro de asistencias
+- ✅ **Panel administrativo:** Gestión de clientes
 
 **Este proyecto no busca solo "que funcione"**, sino demostrar:
 - Arquitectura limpia y escalable
@@ -41,7 +41,7 @@ Construir un sistema de gestión completo para estudios de Pilates que incluya:
   - Auth (autenticación con email/password)
   - PostgreSQL (base de datos relacional)
   - Row Level Security (RLS)
-  - Real-time subscriptions (futuro)
+  - SQL Functions para lógica segura
 
 ### Herramientas de desarrollo
 - Git y GitHub (control de versiones)
@@ -71,14 +71,16 @@ FASE 3: ████████████████████ 100% ✅ CO
   ✓ Gestión de reservas completa
   ✓ Calendario de reservas interactivo
 
-FASE 4: ░░░░░░░░░░░░░░░░░░░░   0% ⏳ PENDIENTE
-  ⏳ Panel de instructor
-  ⏳ Panel administrativo
+FASE 4: ████████████████░░░░  80% 🟡 EN PROGRESO
+  ✅ CalendarioInstructorView - Completa
+  ✅ RegistroAsistenciaView - Completa
+  ✅ GestionClientesView - Completa
+  ⏳ Mejoras pendientes (ver sección de problemas)
 
-TOTAL:  ██████████████░░░░░░  70% del proyecto
+TOTAL:  ███████████████████░  90% del proyecto
 ```
 
-**Última actualización:** 30 de Diciembre, 2025
+**Última actualización:** 3 de Enero, 2026
 
 ---
 
@@ -93,10 +95,11 @@ src/
 │   ├── NavbarDynamic.vue
 │   └── Footer.vue
 ├── composables/         # Lógica reutilizable (Composition API)
-│   ├── usePlanes.ts
-│   ├── useDashboard.ts
 │   ├── useMisReservas.ts
-│   └── useCalendarCliente.ts
+│   ├── useCalendarCliente.ts
+│   ├── useCalendarioInstructor.ts
+│   ├── useRegistroAsistencia.ts
+│   └── useGestionClientes.ts
 ├── lib/                 # Configuraciones externas
 │   └── supabase.ts     # Cliente de Supabase
 ├── stores/              # Estado global (Pinia)
@@ -282,6 +285,7 @@ clase_id    UUID (FK clases)
 mi_paquete_id UUID (FK mis_paquetes)
 fecha_reserva TIMESTAMP
 estado      VARCHAR(20) DEFAULT 'confirmada'
+asistio     BOOLEAN DEFAULT NULL
 UNIQUE (cliente_id, clase_id)
 ```
 
@@ -291,24 +295,21 @@ UNIQUE (cliente_id, clase_id)
 
 | Tabla | Políticas activas |
 |-------|------------------|
-| profiles | SELECT, INSERT, UPDATE (own) |
-| clientes | SELECT, INSERT (own) |
+| profiles | SELECT, INSERT, UPDATE (own + admin) |
+| clientes | SELECT, INSERT (own + admin) |
+| instructores | SELECT (own) |
 | paquetes | SELECT (all active) |
-| mis_paquetes | SELECT, INSERT, UPDATE (own) |
-| clases | SELECT (all), UPDATE (system) |
-| mis_reservas | SELECT, INSERT, UPDATE, DELETE (own) |
+| mis_paquetes | SELECT, INSERT, UPDATE (own + admin) |
+| clases | SELECT (all), UPDATE (system + instructor) |
+| mis_reservas | SELECT, INSERT, UPDATE, DELETE (own + instructor + admin) |
 
-**Ejemplo de política:**
+**Funciones SQL de ayuda:**
 ```sql
-CREATE POLICY "Clientes pueden ver sus propias reservas"
-ON public.mis_reservas FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM public.clientes
-    WHERE clientes.id = mis_reservas.cliente_id
-    AND clientes.profile_id = auth.uid()
-  )
-);
+-- Verificar si el usuario es admin
+CREATE FUNCTION public.is_admin() RETURNS BOOLEAN
+
+-- Obtener email de usuarios de forma segura
+CREATE FUNCTION public.get_user_email(user_id UUID) RETURNS TEXT
 ```
 
 ---
@@ -346,6 +347,36 @@ USING (
   - Control de capacidad
   - Fechas pasadas bloqueadas
 - Transacción completa al reservar
+
+---
+
+### ✅ Rol: Instructor
+
+#### 1. Calendario de clases (READ-ONLY)
+- Vista de todas las clases asignadas
+- Código de colores por ocupación
+- Modal con lista de estudiantes registrados
+- Múltiples vistas (mensual, semanal, diaria)
+
+#### 2. Registro de asistencias
+- Lista de clases pasadas con reservas
+- Marcar asistencia individual (asistió/faltó)
+- Guardado automático en tiempo real
+- Resumen de asistencias por clase
+
+---
+
+### ✅ Rol: Admin
+
+#### 1. Gestión de clientes
+- Lista completa de clientes
+- Búsqueda por nombre, email o teléfono
+- Filtros por estado (con/sin paquetes)
+- Modal con detalles completos:
+  - Información personal
+  - Paquetes activos e inactivos
+  - Últimas 10 reservas con asistencia
+- Estadísticas en tiempo real
 
 ---
 
@@ -392,43 +423,41 @@ npm run build
 
 ---
 
-## 🧪 Testing y validación
+## ⚠️ Problemas conocidos y mejoras pendientes
 
-### Usuario de prueba
+### 🔴 Problemas críticos
 
-```
-Email: carlos.test@gmail.com
-Password: Carlos123!
-Rol: cliente
-```
-
-### Flujo de prueba completo
-
-1. ✅ Login con usuario de prueba
-2. ✅ Ver dashboard con información real
-3. ✅ Navegar a Planes y comprar paquete
-4. ✅ Verificar paquete aparece en dashboard
-5. ✅ Ir a Calendario y reservar clase
-6. ✅ Ver reserva en Mis Reservas
-7. ✅ Cancelar reserva
-8. ✅ Verificar clase devuelta al paquete
-9. ✅ Logout
-
----
-
-## ⚠️ Problemas conocidos
-
-### 1. RegistrarseView incompleto (Fase 2) 🔴
+#### 1. RegistrarseView no completa registro (Fase 2)
 - **Estado:** Pendiente de corrección
 - **Síntoma:** Registro se crea en `auth.users` y `profiles`, pero no en `clientes`
 - **Workaround:** Crear usuarios manualmente desde Supabase Dashboard
 - **Prioridad:** Alta (antes de producción)
 
-### 2. Supabase signups bloqueados 🟡
-- **Estado:** Configuración intencional de desarrollo
-- **Causa:** Settings de Supabase Auth
-- **Workaround:** Dashboard manual con "Auto Confirm User"
-- **Impacto:** Solo desarrollo
+#### 2. Timezone en calendario de reservas
+- **Estado:** Pendiente de validación
+- **Síntoma:** Reserva se guarda con 1 día de diferencia (jueves → miércoles)
+- **Causa:** FullCalendar interpreta fechas con hora como UTC
+- **Solución aplicada:** Uso de `allDay: true` y `timeZone: 'local'`
+- **Prioridad:** Alta - requiere testing exhaustivo
+
+---
+
+### 🟡 Mejoras planificadas (Asteriscos)
+
+#### 3. MisReservasView - Separación de reservas pasadas
+- **Descripción:** Crear sección "Reservas Pasadas" o esconderlas por defecto
+- **Beneficio:** Mejor organización visual de reservas activas vs históricas
+- **Prioridad:** Media
+
+#### 4. MisReservasView - Botón "Nueva Reserva"
+- **Descripción:** Agregar botón que redirija a `/calendario-cliente`
+- **Beneficio:** Mejor UX, flujo más intuitivo
+- **Prioridad:** Media
+
+#### 5. Renombrar MisReservasView
+- **Descripción:** Cambiar nombre a algo más intuitivo (ej: "Mis Clases")
+- **Beneficio:** Nomenclatura más clara para usuarios finales
+- **Prioridad:** Baja
 
 ---
 
@@ -438,13 +467,11 @@ Rol: cliente
 ```
 main      → Estable (producción)
 develop   → Integración (desarrollo)
-feature/* → Nuevas funcionalidades
 fix/*     → Correcciones de bugs
 ```
 
 ### Convención de commits (Conventional Commits)
 ```
-feat: nueva funcionalidad
 fix: corrección de bug
 refactor: refactorización sin cambio funcional
 docs: documentación
@@ -453,8 +480,9 @@ chore: tareas de mantenimiento
 
 **Ejemplo:**
 ```bash
-git commit -m "feat: agregar sistema de reservas en calendario"
-git commit -m "fix: corregir políticas RLS de mis_reservas"
+git commit -m "feat: agregar gestión de clientes para admin"
+git commit -m "fix: corregir timezone en calendario de reservas"
+git commit -m "docs: actualizar README con estado de fase 4"
 ```
 
 ---
@@ -466,6 +494,7 @@ git commit -m "fix: corregir políticas RLS de mis_reservas"
 - [Supabase Docs](https://supabase.com/docs)
 - [Pinia Documentation](https://pinia.vuejs.org/)
 - [FullCalendar Vue](https://fullcalendar.io/docs/vue)
+- [Tailwind CSS](https://tailwindcss.com/docs)
 
 ---
 
@@ -480,15 +509,15 @@ git commit -m "fix: corregir políticas RLS de mis_reservas"
 - ✅ **Validaciones de negocio** en frontend y backend
 - ✅ **UX profesional** con feedback visual y estados de carga
 - ✅ **Git workflow** con conventional commits
+- ✅ **SQL Functions** para lógica segura del lado del servidor
+- ✅ **Manejo de timezones** en aplicaciones internacionales
 
 ---
 
 ## 👤 Autor
 
 **Juan Carlos Quiñonez Madrid**  
-📧 Email: b4rc4drid@gmail.com  
-💼 LinkedIn: [tu-perfil](#)  
-🌐 Portfolio: [tu-portfolio](#)  
+📧 Email: b4rc4drid@gmail.com
 
 ---
 
@@ -501,26 +530,25 @@ Código privado - No apto para uso comercial sin autorización.
 
 ## 🚀 Roadmap
 
-### Próximas funcionalidades (Fase 4)
-- [ ] Panel de instructor
-  - [ ] Calendario de clases asignadas
-  - [ ] Registro de asistencias
-  - [ ] Lista de clientes por clase
-- [ ] Panel administrativo
-  - [ ] Gestión de clientes
-  - [ ] Reportes de ventas
-  - [ ] Dashboard de métricas
+### Fase 5 - Mejoras y pulido (próxima fase)
+- [ ] Resolver problema de RegistrarseView
+- [ ] Validar y corregir timezone definitivamente
+- [ ] Implementar mejoras de MisReservasView (separación + botón)
+- [ ] Renombrar vista a nombre más intuitivo
+- [ ] Agregar página 404 personalizada
+- [ ] Panel de usuario en navbar (dropdown con info)
+- [ ] Tests básicos con Vitest
 
-### Mejoras futuras (Fase 5)
+### Futuras mejoras (post-MVP)
 - [ ] Notificaciones por email (Supabase Edge Functions)
+- [ ] Vista para que instructor cree sus propias clases
+- [ ] Reportes y estadísticas para admin (gráficos con Chart.js)
 - [ ] Subscripciones en tiempo real
-- [ ] App móvil con React Native
 - [ ] Sistema de pagos (Stripe)
 - [ ] Modo oscuro
+- [ ] App móvil con React Native
 - [ ] Internacionalización (i18n)
 
 ---
 
-**¿Preguntas o sugerencias?** Contacta al desarrollador.
-
-**Última actualización:** 30 de Diciembre, 2025
+**Última actualización:** 3 de Enero, 2026
