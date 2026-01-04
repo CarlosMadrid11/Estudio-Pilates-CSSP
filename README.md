@@ -59,11 +59,11 @@ FASE 1: ████████████████████ 100% ✅ CO
   ✓ Navegación dinámica por roles
   ✓ Layout centralizado
 
-FASE 2: ███████████████████░  95% 🟡 CASI COMPLETA
+FASE 2: ███████████████████░  100% ✅ COMPLETADA
   ✓ Integración con Supabase
   ✓ Base de datos configurada
   ✓ RLS implementado
-  ⚠ RegistrarseView con problema conocido
+  ✓ RegistrarseView hace el registro --> se agrega a la bd --> autentica al usuario --> hace un login manual --> se redirige a dashboard como lo haria el login
 
 FASE 3: ████████████████████ 100% ✅ COMPLETADA
   ✓ Sistema de compra de paquetes
@@ -427,13 +427,7 @@ npm run build
 
 ### 🔴 Problemas críticos
 
-#### 1. RegistrarseView no completa registro (Fase 2)
-- **Estado:** Pendiente de corrección
-- **Síntoma:** Registro se crea en `auth.users` y `profiles`, pero no en `clientes`
-- **Workaround:** Crear usuarios manualmente desde Supabase Dashboard
-- **Prioridad:** Alta (antes de producción)
-
-#### 2. Timezone en calendario de reservas
+#### 1. Timezone en calendario de reservas
 - **Estado:** Pendiente de validación
 - **Síntoma:** Reserva se guarda con 1 día de diferencia (jueves → miércoles)
 - **Causa:** FullCalendar interpreta fechas con hora como UTC
@@ -444,17 +438,17 @@ npm run build
 
 ### 🟡 Mejoras planificadas (Asteriscos)
 
-#### 3. MisReservasView - Separación de reservas pasadas
+#### 2. MisReservasView - Separación de reservas pasadas
 - **Descripción:** Crear sección "Reservas Pasadas" o esconderlas por defecto
 - **Beneficio:** Mejor organización visual de reservas activas vs históricas
 - **Prioridad:** Media
 
-#### 4. MisReservasView - Botón "Nueva Reserva"
+#### 3. MisReservasView - Botón "Nueva Reserva"
 - **Descripción:** Agregar botón que redirija a `/calendario-cliente`
 - **Beneficio:** Mejor UX, flujo más intuitivo
 - **Prioridad:** Media
 
-#### 5. Renombrar MisReservasView
+#### 4. Renombrar MisReservasView
 - **Descripción:** Cambiar nombre a algo más intuitivo (ej: "Mis Clases")
 - **Beneficio:** Nomenclatura más clara para usuarios finales
 - **Prioridad:** Baja

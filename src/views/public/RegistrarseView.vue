@@ -96,8 +96,10 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 // Debug logs
 interface DebugLog {
@@ -394,7 +396,33 @@ const registrarUsuario = async () => {
     }
 
     // ============================================
-    // PASO 4: ÉXITO TOTAL
+    // PASO 4: Sincronizar Auth Store - faltaba restaurar la sesion, al momento de registrarse todavia lo detectaba como no autenticado
+    // ahora si lo autentica e inicia sesion automaticamente
+    // ============================================
+    addLog('info', '🔄 Paso 4: Sincronizando sesión con Auth Store...')
+    
+    // Restaurar sesión en el store (esto actualiza isAuthenticated)
+    const sessionRestored = await authStore.restoreSession()
+    
+    if (sessionRestored) {
+      addLog('success', '✅ Auth Store sincronizado')
+      addLog('info', `🔍 Usuario autenticado: ${authStore.isAuthenticated}`)
+      addLog('info', `🔍 Rol: ${authStore.role}`)
+    } else {
+      addLog('warning', '⚠️ No se pudo sincronizar el store, intentando login manual...')
+      
+      // Fallback: usar el método login del store
+      const loginResult = await authStore.login(validatedData.email, validatedData.password)
+      
+      if (loginResult.success) {
+        addLog('success', '✅ Login manual exitoso')
+      } else {
+        addLog('error', '❌ Login manual falló, pero el usuario está creado')
+      }
+    }
+
+    // ============================================
+    // PASO 5: ÉXITO TOTAL
     // ============================================
     addLog('success', '✅✅✅ REGISTRO COMPLETO Y EXITOSO')
     
@@ -407,8 +435,10 @@ const registrarUsuario = async () => {
     password.value = ''
     confirmPassword.value = ''
     
-    // Redirigir al dashboard (ya tiene sesión activa)
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Pequeña pausa antes de redirigir - espera 500ms y luego redirige
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    // Redirigir al dashboard (ahora sí está autenticado en el store)
     router.push('/dashboard-cliente')
 
   } catch (error: unknown) {
