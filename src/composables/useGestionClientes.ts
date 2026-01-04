@@ -125,26 +125,34 @@ export function useGestionClientes() {
 
       console.log('✅ Clientes obtenidos:', clientesData)
 
-      // Mapear datos
-      clientes.value = ((clientesData || []) as Record<string, unknown>[]).map((cliente) => {
-        const profileData = cliente.profiles as unknown as Record<string, unknown> | undefined
-        const paquetesData = (cliente.mis_paquetes as unknown as Record<string, unknown>[] | undefined) || []
+      // Mapear datos (obtendremos emails con función SQL)
+      const clientesConEmails = await Promise.all(
+        ((clientesData || []) as Record<string, unknown>[]).map(async (cliente) => {
+          const profileData = cliente.profiles as unknown as Record<string, unknown> | undefined
+          const paquetesData = (cliente.mis_paquetes as unknown as Record<string, unknown>[] | undefined) || []
 
-        const paquetesActivos = paquetesData.filter(p => p.activo === true)
-        const clasesDisponibles = paquetesActivos.reduce(
-          (sum, p) => sum + ((p.clases_restantes as number) || 0), 
-          0
-        )
+          // Obtener email con función SQL
+          const { data: emailData } = await supabase
+            .rpc('get_user_email', { user_id: cliente.profile_id as string })
 
-        return {
-          id: cliente.id as string,
-          nombre_completo: (profileData?.nombre_completo as string) || 'Sin nombre',
-          email: (profileData?.email as string) || 'Sin email',
-          telefono: (profileData?.telefono as string) || 'N/A',
-          paquetes_activos: paquetesActivos.length,
-          clases_disponibles: clasesDisponibles
-        }
-      })
+          const paquetesActivos = paquetesData.filter(p => p.activo === true)
+          const clasesDisponibles = paquetesActivos.reduce(
+            (sum, p) => sum + ((p.clases_restantes as number) || 0), 
+            0
+          )
+
+          return {
+            id: cliente.id as string,
+            nombre_completo: (profileData?.nombre_completo as string) || 'Sin nombre',
+            email: (emailData as string) || 'Sin email',
+            telefono: (profileData?.telefono as string) || 'N/A',
+            paquetes_activos: paquetesActivos.length,
+            clases_disponibles: clasesDisponibles
+          }
+        })
+      )
+
+      clientes.value = clientesConEmails
 
       console.log('✅ Clientes procesados:', clientes.value.length)
 
@@ -173,7 +181,6 @@ export function useGestionClientes() {
           direccion,
           profiles (
             nombre_completo,
-            email,
             telefono
           )
         `)
@@ -183,6 +190,11 @@ export function useGestionClientes() {
       if (clienteError || !clienteData) {
         throw new Error('No se encontró el cliente')
       }
+
+      // Obtener email de auth.users con función SQL
+      const { data: emailData } = await supabase
+        .rpc('get_user_email', { user_id: clienteData.profile_id })
+      const email = (emailData as string) || 'Sin email'
 
       const profileData = clienteData.profiles as unknown as Record<string, unknown> | undefined
 
@@ -259,7 +271,7 @@ export function useGestionClientes() {
         id: clienteData.id,
         profile_id: clienteData.profile_id,
         nombre_completo: (profileData?.nombre_completo as string) || 'Sin nombre',
-        email: (profileData?.email as string) || 'Sin email',
+        email: email,
         telefono: (profileData?.telefono as string) || 'N/A',
         direccion: clienteData.direccion || 'N/A',
         paquetes,
