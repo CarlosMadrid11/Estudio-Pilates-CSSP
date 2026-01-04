@@ -198,7 +198,9 @@ const clearErrors = () => {
   })
 }
 
-// REGISTRO CON DEBUG EXTREMO
+// ============================================
+// REGISTRO COMPLETO - VERSIÓN FINAL
+// ============================================
 const registrarUsuario = async () => {
   clearErrors()
   debugLogs.value = []
@@ -216,7 +218,7 @@ const registrarUsuario = async () => {
   addLog('info', `📧 Email: ${formData.email}`)
   addLog('info', `👤 Nombre: ${formData.nombreCompleto}`)
 
-  // Validar
+  // Validar formulario
   const validationResult = registroSchema.safeParse(formData)
   
   if (!validationResult.success) {
@@ -252,49 +254,67 @@ const registrarUsuario = async () => {
           nombre_completo: validatedData.nombreCompleto,
           telefono: validatedData.telefono,
           rol: 'cliente'
-        }
+        },
+        emailRedirectTo: undefined
       }
     })
 
-    addLog('info', `🔍 Auth Data: ${JSON.stringify(authData, null, 2)}`)
-    addLog('info', `🔍 Auth Error: ${JSON.stringify(authError, null, 2)}`)
+    addLog('info', `🔍 Auth Error: ${authError ? authError.message : 'ninguno'}`)
 
     if (authError) {
-      addLog('error', `❌ Error en auth: ${authError.message}`)
+      if (authError.message.includes('signup_disabled') || authError.message.includes('Signups not allowed')) {
+        addLog('error', '❌ Los registros están desactivados en Supabase')
+        throw new Error('Los registros públicos están temporalmente desactivados. Por favor contacta al administrador.')
+      }
       throw new Error(authError.message)
     }
 
     if (!authData.user) {
       addLog('error', '❌ No se recibió usuario de auth')
-      throw new Error('No se pudo crear el usuario en auth.users')
+      throw new Error('No se pudo crear el usuario en el sistema')
     }
 
     const userId = authData.user.id
-    addLog('success', `✅ Usuario creado con ID: ${userId}`)
+    addLog('success', `✅ Usuario creado en auth.users con ID: ${userId}`)
 
     // ============================================
-    // PASO 2: Verificar/Crear profile
+    // PASO 1.5: Login automático
     // ============================================
-    addLog('info', '📝 Paso 2: Verificando profile...')
+    addLog('info', '🔐 Paso 1.5: Iniciando sesión automática...')
     
-    // Esperar un poco por el trigger
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email: validatedData.email,
+      password: validatedData.password
+    })
+
+    if (loginError) {
+      addLog('warning', `⚠️ Login automático falló: ${loginError.message}`)
+      addLog('info', 'Continuando sin sesión activa...')
+    } else {
+      addLog('success', '✅ Sesión iniciada automáticamente')
+      addLog('info', `🔍 Session user ID: ${loginData.session?.user?.id}`)
+    }
+
+    // ============================================
+    // PASO 2: Esperar y verificar profile
+    // ============================================
+    addLog('info', '📝 Paso 2: Esperando creación de profile (2 segundos)...')
     
-    const { data: existingProfile, error: checkProfileError } = await supabase
+    // Esperar para que el trigger o sistema cree el profile
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const { data: profileData } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle()
 
-    addLog('info', `🔍 Profile existente: ${JSON.stringify(existingProfile, null, 2)}`)
-    addLog('info', `🔍 Error al verificar: ${JSON.stringify(checkProfileError, null, 2)}`)
+    addLog('info', `🔍 Profile encontrado: ${profileData ? 'SÍ' : 'NO'}`)
 
-    if (existingProfile) {
-      addLog('success', '✅ Profile ya existe (trigger funcionó)')
-    } else {
+    if (!profileData) {
       addLog('warning', '⚠️ Profile no existe, creándolo manualmente...')
       
-      const { data: newProfile, error: createProfileError } = await supabase
+      const { error: createProfileError } = await supabase
         .from('profiles')
         .insert({
           id: userId,
@@ -305,69 +325,80 @@ const registrarUsuario = async () => {
         .select()
         .single()
 
-      addLog('info', `🔍 Nuevo profile: ${JSON.stringify(newProfile, null, 2)}`)
-      addLog('info', `🔍 Error al crear: ${JSON.stringify(createProfileError, null, 2)}`)
-
       if (createProfileError) {
         addLog('error', `❌ Error al crear profile: ${createProfileError.message}`)
         throw new Error(`Error al crear profile: ${createProfileError.message}`)
       }
 
       addLog('success', '✅ Profile creado manualmente')
+      addLog('info', 'Esperando 1 segundo adicional...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    } else {
+      addLog('success', '✅ Profile existe (creado automáticamente)')
     }
 
     // ============================================
-    // PASO 3: Crear cliente
+    // PASO 3: Verificar/Crear cliente
     // ============================================
-    addLog('info', '📝 Paso 3: Creando registro en clientes...')
-    addLog('info', `🔍 Usando profile_id: ${userId}`)
+    addLog('info', '📝 Paso 3: Verificando registro en tabla clientes...')
     
-    // Verificar sesión actual
-    const { data: { session } } = await supabase.auth.getSession()
-    addLog('info', `🔍 Sesión actual: ${session ? 'Existe' : 'No existe'}`)
-    if (session) {
-      addLog('info', `🔍 Session user ID: ${session.user.id}`)
-      addLog('info', `🔍 ¿Session user = profile_id?: ${session.user.id === userId}`)
-    }
-    
-    const { data: clienteData, error: clienteError } = await supabase
+    // Primero verificar si ya existe (por si el trigger funcionó)
+    const { data: existingCliente, error: checkError } = await supabase
       .from('clientes')
-      .insert({
-        profile_id: userId,
-        direccion: null
-      })
-      .select()
-      .single()
+      .select('id')
+      .eq('profile_id', userId)
+      .maybeSingle()
 
-    addLog('info', `🔍 Cliente Data: ${JSON.stringify(clienteData, null, 2)}`)
-    addLog('info', `🔍 Cliente Error: ${JSON.stringify(clienteError, null, 2)}`)
+    addLog('info', `🔍 Cliente existente: ${existingCliente ? 'SÍ (ID: ' + existingCliente.id + ')' : 'NO'}`)
+    addLog('info', `🔍 Error al verificar: ${checkError ? checkError.message : 'ninguno'}`)
 
-    if (clienteError) {
-      addLog('error', `❌ ERROR AL CREAR CLIENTE: ${clienteError.message}`)
-      addLog('error', `❌ Code: ${clienteError.code}`)
-      addLog('error', `❌ Details: ${clienteError.details}`)
-      addLog('error', `❌ Hint: ${clienteError.hint}`)
+    if (existingCliente) {
+      addLog('success', '✅ Cliente ya existe (el trigger automático funcionó)')
+    } else {
+      addLog('info', '⚡ Cliente no existe, creándolo manualmente...')
       
-      // No hacer throw, mostrar el error pero continuar
-      alert(`⚠️ Usuario creado pero con problema en cliente:\n${clienteError.message}\n\nPuedes iniciar sesión de todos modos.`)
-      router.push('/login')
-      return
-    }
+      const { data: clienteData, error: clienteError } = await supabase
+        .from('clientes')
+        .insert({
+          profile_id: userId,
+          direccion: null
+        })
+        .select()
+        .single()
 
-    if (!clienteData) {
-      addLog('error', '❌ No se devolvió data del cliente')
-      alert('⚠️ Usuario creado pero sin confirmar cliente. Intenta iniciar sesión.')
-      router.push('/login')
-      return
-    }
+      addLog('info', `🔍 Cliente creado: ${clienteData ? 'SÍ' : 'NO'}`)
+      addLog('info', `🔍 Error al crear: ${clienteError ? clienteError.message : 'ninguno'}`)
 
-    addLog('success', `✅ Cliente creado con ID: ${clienteData.id}`)
+      if (clienteError) {
+        addLog('error', `❌ Error al crear cliente: ${clienteError.message}`)
+        addLog('error', `Code: ${clienteError.code || 'N/A'}`)
+        addLog('error', `Details: ${clienteError.details || 'N/A'}`)
+        
+        // Última verificación por si el trigger lo creó mientras tanto
+        addLog('info', '🔄 Verificando una vez más si el cliente existe...')
+        const { data: retryCliente } = await supabase
+          .from('clientes')
+          .select('id')
+          .eq('profile_id', userId)
+          .maybeSingle()
+        
+        if (retryCliente) {
+          addLog('success', '✅ Cliente existe (creado por trigger en segundo intento)')
+        } else {
+          // Error real - no se pudo crear
+          throw new Error(`No se pudo crear el registro de cliente: ${clienteError.message}`)
+        }
+      } else {
+        addLog('success', `✅ Cliente creado manualmente con ID: ${clienteData.id}`)
+      }
+    }
 
     // ============================================
     // PASO 4: ÉXITO TOTAL
     // ============================================
-    addLog('success', '✅✅✅ REGISTRO COMPLETO')
-    alert(`¡Registro exitoso! Bienvenido ${validatedData.nombreCompleto}. Ahora puedes iniciar sesión.`)
+    addLog('success', '✅✅✅ REGISTRO COMPLETO Y EXITOSO')
+    
+    alert(`¡Bienvenido ${validatedData.nombreCompleto}!\n\n✅ Tu cuenta ha sido creada exitosamente.\n✅ Serás redirigido a tu dashboard.`)
     
     // Limpiar formulario
     nombreCompleto.value = ''
@@ -376,25 +407,39 @@ const registrarUsuario = async () => {
     password.value = ''
     confirmPassword.value = ''
     
-    // Redirigir
-    router.push('/login')
+    // Redirigir al dashboard (ya tiene sesión activa)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    router.push('/dashboard-cliente')
 
   } catch (error: unknown) {
     addLog('error', `❌❌❌ ERROR GENERAL: ${error}`)
     
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
     
+    // Manejo específico de errores
     if (errorMessage.includes('already registered') || errorMessage.includes('User already registered')) {
       errors.email = 'Este correo ya está registrado'
-      alert('Este correo ya está registrado. Intenta iniciar sesión.')
+      alert('❌ Este correo ya está registrado.\n\n💡 Intenta iniciar sesión en su lugar.')
     } else if (errorMessage.includes('duplicate key') || errorMessage.includes('unique')) {
-      errors.email = 'Este correo ya existe'
-      alert('Este correo ya está registrado.')
+      errors.email = 'Este correo ya existe en el sistema'
+      alert('❌ Ya existe una cuenta con este correo electrónico.')
+    } else if (errorMessage.includes('signup_disabled') || errorMessage.includes('Signups not allowed')) {
+      alert('⚠️ Los registros públicos están temporalmente desactivados.\n\nPor favor contacta al administrador del sistema.')
     } else {
-      alert(`Error al registrar: ${errorMessage}`)
+      alert(`❌ Error al registrar:\n\n${errorMessage}\n\n💡 Por favor intenta nuevamente o contacta soporte.`)
     }
+    
+    // Limpiar cualquier sesión parcial
+    try {
+      await supabase.auth.signOut()
+      addLog('info', '🧹 Sesión parcial limpiada')
+    } catch {
+      addLog('warning', '⚠️ No se pudo limpiar sesión')
+    }
+    
   } finally {
     isLoading.value = false
+    addLog('info', '🏁 Proceso de registro finalizado')
   }
 }
 </script>
@@ -500,6 +545,7 @@ h3 {
   font-size: 11px;
   margin-bottom: 5px;
   font-family: monospace;
+  line-height: 1.4;
 }
 
 .debug-log .info {
@@ -508,6 +554,7 @@ h3 {
 
 .debug-log .success {
   color: #4caf50;
+  font-weight: 500;
 }
 
 .debug-log .error {
@@ -538,6 +585,7 @@ h3 {
 .btn:hover:not(:disabled) {
   background: #f0f0f0;
   transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .btn:active:not(:disabled) {
@@ -561,10 +609,12 @@ h3 {
   color: #49a7ff;
   text-decoration: none;
   font-weight: 500;
+  transition: color 0.2s;
 }
 
 .link a:hover {
   text-decoration: underline;
+  color: #66b3ff;
 }
 
 @media (max-width: 500px) {
