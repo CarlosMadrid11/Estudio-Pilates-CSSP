@@ -23,6 +23,9 @@ import RegistroAsistenciaView from '@/views/instructor/RegistroAsistenciaView.vu
 import GestionClientesView from '@/views/admin/GestionClientesView.vue'
 import ReportesVentasView from '@/views/admin/ReportesVentasView.vue'
 
+// Vista error 404
+import NotFoundView from '@/views/NotFoundView.vue'
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -112,6 +115,13 @@ const router = createRouter({
       component: ReportesVentasView,
       meta: { requiresAuth: true, allowedRoles: ['admin'] }
     },
+    // Ruta para vista de error 404
+    {
+      path: '/:catchAll(.*)', // Cuando no se encuentra la ruta que busca el usuario lo redirige a esta vista, todos los roles están permitidos para ver esta vista
+      name: 'not-found',
+      component: NotFoundView,
+      meta: { requiresAuth: false, allowedRoles: ['guest', 'cliente', 'instructor', 'admin'] }
+    }
   ]
 })
 
