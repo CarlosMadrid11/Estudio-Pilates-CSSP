@@ -23,9 +23,6 @@ import RegistroAsistenciaView from '@/views/instructor/RegistroAsistenciaView.vu
 import GestionClientesView from '@/views/admin/GestionClientesView.vue'
 import ReportesVentasView from '@/views/admin/ReportesVentasView.vue'
 
-// Testing
-import AuthTestView from '@/views/AuthTestView.vue'
-import TestTimeZoneView from '@/views/TestTimeZoneView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -115,20 +112,6 @@ const router = createRouter({
       component: ReportesVentasView,
       meta: { requiresAuth: true, allowedRoles: ['admin'] }
     },
-
-    // Testing - SIN restricciones (zona libre para desarrollo)
-    {
-      path: '/test-auth',
-      name: 'test-auth',
-      component: AuthTestView,
-      meta: { isTestRoute: true } // Marcador especial para el guard
-    },
-    {
-      path: '/test-timezone',
-      name: 'test-timezone',
-      component: TestTimeZoneView,
-      meta: { isTestRoute: true } // Marcador especial para el guard
-    }
   ]
 })
 
