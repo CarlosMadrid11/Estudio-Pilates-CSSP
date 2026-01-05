@@ -48,6 +48,12 @@
           </div>
         </div>
       </div>
+      <div class="nueva-reserva">
+        <h3>¿Quieres hacer una nueva reserva?</h3>
+        <router-link to="/calendario-cliente" class="btn-calendario">
+          Ver Calendario de Clases
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -348,6 +354,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
+.nueva-reserva h3 {
+  padding-bottom: 20px;
+}
+.nueva-reserva {
+  margin-top: 20px;
+  /* border: 1px solid red; */
+  margin: 0% 35%;
+  justify-content: center;
+  text-align: center;
+  background-color: #494545;
+  padding: 25px;
+}
 .mis-reservas-view {
   margin: 0;
   padding: 0;
