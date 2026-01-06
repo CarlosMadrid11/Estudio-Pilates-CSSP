@@ -89,6 +89,18 @@
       </div>
     </div>
   </div>
+  <Modal
+  v-model="modal.isOpen.value"
+  :type="modal.config.value.type"
+  :title="modal.config.value.title"
+  :message="modal.config.value.message"
+  :icon="modal.config.value.icon"
+  :confirmText="modal.config.value.confirmText"
+  :cancelText="modal.config.value.cancelText"
+  :showCancel="modal.config.value.showCancel"
+  @confirm="modal.confirm"
+  @cancel="modal.cancel"
+/>
 </template>
 
 <script setup lang="ts">
@@ -97,9 +109,12 @@ import { useRouter } from 'vue-router'
 import { z } from 'zod'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useModal } from '@/composables/useModal'
+import Modal from '@/components/Modal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const modal = useModal()
 
 // Debug logs
 interface DebugLog {
@@ -233,7 +248,11 @@ const registrarUsuario = async () => {
         addLog('error', `❌ ${field}: ${err.message}`)
       }
     })
-    alert('Por favor corrige los errores en el formulario')
+    await modal.showError(
+      'Error de Validación',
+      'Por favor corrige los errores en el formulario antes de continuar.'
+    )
+
     return
   }
 
@@ -425,9 +444,12 @@ const registrarUsuario = async () => {
     // PASO 5: ÉXITO TOTAL
     // ============================================
     addLog('success', '✅✅✅ REGISTRO COMPLETO Y EXITOSO')
-    
-    alert(`¡Bienvenido ${validatedData.nombreCompleto}!\n\n✅ Tu cuenta ha sido creada exitosamente.\n✅ Serás redirigido a tu dashboard.`)
-    
+
+    await modal.showSuccess(
+      'Registro Exitoso',
+      `¡Bienvenido ${validatedData.nombreCompleto}!\n\n✅ Tu cuenta ha sido creada exitosamente.\n✅ Serás redirigido a tu dashboard.`
+    )
+
     // Limpiar formulario
     nombreCompleto.value = ''
     telefono.value = ''
@@ -449,14 +471,26 @@ const registrarUsuario = async () => {
     // Manejo específico de errores
     if (errorMessage.includes('already registered') || errorMessage.includes('User already registered')) {
       errors.email = 'Este correo ya está registrado'
-      alert('❌ Este correo ya está registrado.\n\n💡 Intenta iniciar sesión en su lugar.')
+      await modal.showError(
+        'Registro Duplicado',
+        '❌ Este correo ya está registrado.\n\n💡 Intenta iniciar sesión en su lugar.'
+      )
     } else if (errorMessage.includes('duplicate key') || errorMessage.includes('unique')) {
       errors.email = 'Este correo ya existe en el sistema'
-      alert('❌ Ya existe una cuenta con este correo electrónico.')
+      await modal.showError(
+        'Correo Duplicado',
+        '❌ Ya existe una cuenta con este correo electrónico.'
+      )
     } else if (errorMessage.includes('signup_disabled') || errorMessage.includes('Signups not allowed')) {
-      alert('⚠️ Los registros públicos están temporalmente desactivados.\n\nPor favor contacta al administrador del sistema.')
+      await modal.showError(
+        'Registro Deshabilitado',
+        '⚠️ Los registros públicos están temporalmente desactivados.\n\nPor favor contacta al administrador del sistema.'
+      )
     } else {
-      alert(`❌ Error al registrar:\n\n${errorMessage}\n\n💡 Por favor intenta nuevamente o contacta soporte.`)
+      await modal.showError(
+        'Error al Registrar',
+        `❌ Error al registrar:\n\n${errorMessage}\n\n💡 Por favor intenta nuevamente o contacta soporte.`
+      )
     }
     
     // Limpiar cualquier sesión parcial

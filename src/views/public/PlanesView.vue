@@ -48,13 +48,32 @@
       <p>No hay paquetes disponibles en este momento.</p>
     </section>
   </div>
+
+  <Modal
+  v-model="modal.isOpen.value"
+  :type="modal.config.value.type"
+  :title="modal.config.value.title"
+  :message="modal.config.value.message"
+  :icon="modal.config.value.icon"
+  :confirmText="modal.config.value.confirmText"
+  :cancelText="modal.config.value.cancelText"
+  :showCancel="modal.config.value.showCancel"
+  @confirm="modal.confirm"
+  @cancel="modal.cancel"
+/>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+
+import { ref } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useModal } from '@/composables/useModal'
+import Modal from '@/components/Modal.vue'
+
+// Usamos redirect asi que ya no ocupamos el onMounted y el router
+// import { ref, onMounted } from 'vue'
+// import { useRouter } from 'vue-router'
 
 // Types
 interface Paquete {
@@ -69,9 +88,10 @@ interface Paquete {
   ahorro?: number
 }
 
-// Router y Store
-const router = useRouter()
+// Router y Store y modal
+// const router = useRouter() - ya no usamos router directamente, aqui usamos el redirect
 const authStore = useAuthStore()
+const  modal = useModal()
 
 // Estado
 const paquetes = ref<Paquete[]>([])
@@ -155,33 +175,44 @@ const formatearPrecio = (precio: number): string => {
 
 //Modificamos las politicas por eso no estaba agarrando
 
+// Solo la parte del script que cambió
+
 // Comprar plan
 const comprarPlan = async (paquete: Paquete) => {
   console.log('💳 Iniciando compra de paquete:', paquete)
-  
 
-  // sin autenticacion para hacer una prueba
-  // Verificar autenticación
+  // Verificar autenticación - ✅ CORRECTO: con await
   if (!authStore.isAuthenticated) {
-    alert('Debes iniciar sesión para comprar un paquete')
-    router.push('/login')
+    await modal.showLoginRequired(
+      'Antes de comprar un paquete necesitas iniciar sesión. Serás redirigido al login.'
+    )
     return
   }
 
-  // Verificar que sea un cliente
+  // Verificar que sea un cliente - ✅ CORRECTO: con await
   if (authStore.role !== 'cliente') {
-    alert('Solo los clientes pueden comprar paquetes')
+    await modal.showError(
+      'Acceso Denegado',
+      'Solo los usuarios con rol de cliente pueden comprar paquetes. Por favor, contacta al administrador si crees que es un error.'
+    )
     return
   }
 
-  // Confirmar compra
-  const confirmar = confirm(
-    `¿Confirmas la compra del ${paquete.nombre}?\n\n` +
-    `📦 ${paquete.num_clases} clases\n` +
-    `⏰ Vigencia: ${paquete.vigencia_dias} días\n` +
-    `💰 Precio: ${formatearPrecio(paquete.precio)} MXN\n` +
-    (paquete.ahorro && paquete.ahorro > 0 ? `✨ Ahorras: ${formatearPrecio(paquete.ahorro)} MXN\n` : '') +
-    `\n⚠️ Esta acción se registrará en la base de datos.`
+  // ✅ CORRECTO: Confirmar compra con modal
+  const confirmar = await modal.showConfirm(
+    'Confirmar Compra',
+    `¿Confirmas la compra del ${paquete.nombre}?
+
+📦 ${paquete.num_clases} clases
+⏰ Vigencia: ${paquete.vigencia_dias} días
+💰 Precio: $${formatearPrecio(paquete.precio)} MXN` +
+    (paquete.ahorro && paquete.ahorro > 0 ? `
+✨ Ahorras: $${formatearPrecio(paquete.ahorro)} MXN` : ''),
+    {
+      confirmText: 'Sí, comprar',
+      cancelText: 'Cancelar',
+      type: 'confirm'
+    }
   )
 
   if (!confirmar) {
@@ -239,43 +270,47 @@ const comprarPlan = async (paquete: Paquete) => {
 
     console.log('✅ Paquete comprado exitosamente:', miPaqueteData)
 
-    // PASO 4: Mostrar éxito y redirigir
-    alert(
-      `🎉 ¡Compra exitosa!\n\n` +
-      `Has adquirido el ${paquete.nombre}\n` +
-      `📦 ${paquete.num_clases} clases disponibles\n` +
-      `⏰ Válido hasta: ${fechaVencimiento.toLocaleDateString('es-MX')}\n\n` +
-      `Puedes ver tu paquete en el Dashboard`
+    // PASO 4: Mostrar éxito con redirección automática
+    // ✅ CORRECTO: No necesitas router.push porque redirectTo lo hace
+    await modal.showSuccess(
+      '¡Compra Exitosa!',
+      `Has adquirido el ${paquete.nombre}. Tienes ${paquete.num_clases} clases disponibles hasta el ${fechaVencimiento.toLocaleDateString('es-MX')}.`,
+      {
+        confirmText: 'Ir al Dashboard',
+        redirectTo: '/dashboard-cliente',
+        redirectDelay: 1000
+      }
     )
-
-    // Redirigir al dashboard
-    router.push('/dashboard-cliente')
+    
+    // ⚠️ ELIMINAR ESTA LÍNEA - Ya no es necesaria
+    // router.push('/dashboard-cliente')
 
   } catch (err) {
     console.error('❌ Error en comprarPlan:', err)
     const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-    alert(`❌ Error al comprar el paquete:\n\n${errorMessage}`)
+    await modal.showError(
+      'Error al Comprar',
+      `No se pudo completar tu compra: ${errorMessage}. Por favor intenta nuevamente.`
+    )
   }
 }
 
-// Ver información
-const verInfo = (paquete: Paquete) => {
+// ✅ CORRECTO: Ver información con await
+const verInfo = async (paquete: Paquete) => {
   console.log('ℹ️ Ver info de:', paquete)
   
-  alert(
-    `Información del ${paquete.nombre}:\n\n` +
-    `✓ ${paquete.num_clases} clases\n` +
-    `✓ Vigencia: ${paquete.vigencia_dias} días\n` +
-    `✓ Precio: $${formatearPrecio(paquete.precio)} MXN\n` +
-    (paquete.ahorro && paquete.ahorro > 0 ? `✓ Ahorras: $${formatearPrecio(paquete.ahorro)} MXN\n` : '') +
-    (paquete.descripcion ? `\n${paquete.descripcion}` : '')
+  await modal.showInfo(
+    paquete.nombre,
+    `📦 ${paquete.num_clases} clases
+⏰ Vigencia: ${paquete.vigencia_dias} días
+💰 Precio: $${formatearPrecio(paquete.precio)} MXN` +
+    (paquete.ahorro && paquete.ahorro > 0 ? `
+✨ Ahorras: $${formatearPrecio(paquete.ahorro)} MXN` : '') +
+    (paquete.descripcion ? `
+
+${paquete.descripcion}` : '')
   )
 }
-
-// Cargar paquetes al montar el componente
-onMounted(() => {
-  fetchPaquetes()
-})
 </script>
 
 <style scoped>
