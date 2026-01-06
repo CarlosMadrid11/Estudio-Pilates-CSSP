@@ -146,13 +146,28 @@
       </div>
     </div>
   </div>
+  <Modal
+  v-model="modal.isOpen.value"
+  :type="modal.config.value.type"
+  :title="modal.config.value.title"
+  :message="modal.config.value.message"
+  :icon="modal.config.value.icon"
+  :confirmText="modal.config.value.confirmText"
+  :cancelText="modal.config.value.cancelText"
+  :showCancel="modal.config.value.showCancel"
+  @confirm="modal.confirm"
+  @cancel="modal.cancel"
+/>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
+import { useModal } from '@/composables/useModal'
+import Modal from '@/components/Modal.vue'
 
+const modal = useModal()
 const authStore = useAuthStore()
 
 // Types
@@ -383,11 +398,15 @@ const getStatusTexto = (estado: string) => {
 // Cancelar reserva
 const cancelarReserva = async (reserva: Reserva) => {
   if (!esCancelable(reserva)) {
-    alert('Esta reserva no puede ser cancelada (falta menos de 2 horas para la clase)')
+    await modal.showError(
+      'Cancelación No Permitida',
+      'Esta reserva no puede ser cancelada (falta menos de 2 horas para la clase)'
+    )
     return
   }
 
-  const confirmar = confirm(
+  const confirmar = await modal.showConfirm(
+    'Confirmar Cancelación',
     `¿Estás seguro de cancelar la reserva del ${formatearFechaCompleta(reserva.clase_fecha)} a las ${formatearHora(reserva.hora_inicio)}?\n\n` +
     `Se devolverá 1 clase a tu paquete.`
   )
@@ -443,12 +462,18 @@ const cancelarReserva = async (reserva: Reserva) => {
     // Cambiar a tab de canceladas
     tabActivo.value = 'canceladas'
 
-    alert('✅ Reserva cancelada exitosamente. La clase ha sido devuelta a tu paquete.')
+    await modal.showSuccess(
+      'Reserva Cancelada',
+      '✅ Reserva cancelada exitosamente. La clase ha sido devuelta a tu paquete.'
+    )
 
   } catch (err) {
     console.error('❌ Error al cancelar:', err)
     const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-    alert(`❌ Error al cancelar la reserva: ${errorMessage}`)
+    await modal.showError(
+      'Error al Cancelar',
+      `❌ Error al cancelar la reserva: ${errorMessage}`
+    )
   } finally {
     isCancelling.value = false
   }

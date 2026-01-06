@@ -1,4 +1,5 @@
-<template>
+<template> 
+<!-- falta por actualizar para añadir un metodo de pago -->
 <div>
     <div class="metodo-pago-view">
         <div class="container">
