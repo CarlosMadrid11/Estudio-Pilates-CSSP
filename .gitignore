@@ -38,7 +38,6 @@ node_modules/
 __screenshots__/
 
 .editorconfig
-.env.d.ts
-tsconfig.node.json
+
 
 .env

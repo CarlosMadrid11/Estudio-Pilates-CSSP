@@ -1,0 +1,24 @@
+{
+  "extends": "@tsconfig/node24/tsconfig.json",
+  "include": [
+    "vite.config.*",
+    "vitest.config.*",
+    "cypress.config.*",
+    "nightwatch.conf.*",
+    "playwright.config.*",
+    "eslint.config.*"
+  ],
+  "compilerOptions": {
+    "noEmit": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"],
+    "strict": false,                // Ya no es mega estricto
+    "noImplicitAny": false,         // Permite "any" sin quejas
+    "noUnusedLocals": false,        // No llora por variables no usadas
+    "noUnusedParameters": false,    // No llora por parámetros no usados
+    "strictNullChecks": false       // Menos drama con null/undefined
+  }
+}
