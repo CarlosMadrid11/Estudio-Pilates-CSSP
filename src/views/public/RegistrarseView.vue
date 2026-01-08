@@ -131,6 +131,7 @@ const addLog = (type: DebugLog['type'], message: string) => {
 // Schema de validación
 const registroSchema = z.object({
   nombreCompleto: z.string()
+    .trim()
     .min(3, 'El nombre debe tener al menos 3 caracteres')
     .max(100, 'El nombre no puede exceder 100 caracteres')
     .regex(
@@ -139,11 +140,13 @@ const registroSchema = z.object({
     ),
   
   telefono: z.string()
+    .trim()
     .min(10, 'El teléfono debe tener al menos 10 dígitos')
     .max(15, 'El teléfono no puede exceder 15 dígitos')
     .regex(/^\d+$/, 'El teléfono solo debe contener números'),
   
   email: z.string()
+    .trim()
     .min(5, 'El correo es demasiado corto')
     .email('Correo electrónico inválido')
     .transform((val) => val.trim().toLowerCase()),
