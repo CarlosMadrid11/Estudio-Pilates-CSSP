@@ -50,21 +50,21 @@
   </div>
 
   <Modal
-  v-model="modal.isOpen.value"
-  :type="modal.config.value.type"
-  :title="modal.config.value.title"
-  :message="modal.config.value.message"
-  :icon="modal.config.value.icon"
-  :confirmText="modal.config.value.confirmText"
-  :cancelText="modal.config.value.cancelText"
-  :showCancel="modal.config.value.showCancel"
-  @confirm="modal.confirm"
-  @cancel="modal.cancel"
-/>
+    v-model="modal.isOpen.value"
+    :type="modal.config.value.type"
+    :title="modal.config.value.title"
+    :message="modal.config.value.message"
+    :icon="modal.config.value.icon"
+    :confirmText="modal.config.value.confirmText"
+    :cancelText="modal.config.value.cancelText"
+    :showCancel="modal.config.value.showCancel"
+    @confirm="modal.confirm"
+    @cancel="modal.cancel"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue' // ← AGREGAR onMounted
+import { ref, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useModal } from '@/composables/useModal'
@@ -92,7 +92,10 @@ const paquetes = ref<Paquete[]>([])
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 
-// Fetch de paquetes desde Supabase
+// ✅ Timeout de 10 segundos
+const TIMEOUT_MS = 10000
+
+// Fetch de paquetes desde Supabase con timeout
 const fetchPaquetes = async () => {
   isLoading.value = true
   error.value = null
@@ -100,11 +103,25 @@ const fetchPaquetes = async () => {
   try {
     console.log('📦 Obteniendo paquetes...')
     
-    const { data, error: fetchError } = await supabase
+    // Promesa de la consulta a Supabase
+    const fetchPromise = supabase
       .from('paquetes')
       .select('*')
       .eq('activo', true)
       .order('num_clases', { ascending: true })
+    
+    // Promesa de timeout que rechaza después de 10 segundos
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('La solicitud tardó demasiado. Por favor, verifica tu conexión e intenta de nuevo.'))
+      }, TIMEOUT_MS)
+    })
+    
+    // Race: la primera promesa que se resuelva/rechace gana
+    const result = await Promise.race([fetchPromise, timeoutPromise])
+    
+    // Extraer data y error del resultado
+    const { data, error: fetchError } = result as Awaited<typeof fetchPromise>
 
     if (fetchError) {
       console.error('❌ Error al obtener paquetes:', fetchError)
@@ -126,13 +143,13 @@ const fetchPaquetes = async () => {
 
   } catch (err) {
     console.error('❌ Error en fetchPaquetes:', err)
-    error.value = err instanceof Error ? err.message : 'Error desconocido'
+    error.value = err instanceof Error ? err.message : 'Error desconocido al cargar los paquetes'
   } finally {
     isLoading.value = false
   }
 }
 
-// ✅ AGREGAR ESTO - Ejecutar al montar el componente
+// Ejecutar al montar el componente
 onMounted(() => {
   fetchPaquetes()
 })
