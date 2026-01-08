@@ -64,16 +64,11 @@
 </template>
 
 <script setup lang="ts">
-
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue' // ← AGREGAR onMounted
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useModal } from '@/composables/useModal'
 import Modal from '@/components/Modal.vue'
-
-// Usamos redirect asi que ya no ocupamos el onMounted y el router
-// import { ref, onMounted } from 'vue'
-// import { useRouter } from 'vue-router'
 
 // Types
 interface Paquete {
@@ -89,9 +84,8 @@ interface Paquete {
 }
 
 // Router y Store y modal
-// const router = useRouter() - ya no usamos router directamente, aqui usamos el redirect
 const authStore = useAuthStore()
-const  modal = useModal()
+const modal = useModal()
 
 // Estado
 const paquetes = ref<Paquete[]>([])
@@ -138,6 +132,11 @@ const fetchPaquetes = async () => {
   }
 }
 
+// ✅ AGREGAR ESTO - Ejecutar al montar el componente
+onMounted(() => {
+  fetchPaquetes()
+})
+
 // Calcular ahorros (comparando con precio por clase del paquete base)
 const calcularAhorros = (paquetesRaw: Paquete[]): Paquete[] => {
   if (paquetesRaw.length === 0) return []
@@ -173,15 +172,11 @@ const formatearPrecio = (precio: number): string => {
   })
 }
 
-//Modificamos las politicas por eso no estaba agarrando
-
-// Solo la parte del script que cambió
-
 // Comprar plan
 const comprarPlan = async (paquete: Paquete) => {
   console.log('💳 Iniciando compra de paquete:', paquete)
 
-  // Verificar autenticación - ✅ CORRECTO: con await
+  // Verificar autenticación
   if (!authStore.isAuthenticated) {
     await modal.showLoginRequired(
       'Antes de comprar un paquete necesitas iniciar sesión. Serás redirigido al login.'
@@ -189,7 +184,7 @@ const comprarPlan = async (paquete: Paquete) => {
     return
   }
 
-  // Verificar que sea un cliente - ✅ CORRECTO: con await
+  // Verificar que sea un cliente
   if (authStore.role !== 'cliente') {
     await modal.showError(
       'Acceso Denegado',
@@ -198,7 +193,7 @@ const comprarPlan = async (paquete: Paquete) => {
     return
   }
 
-  // ✅ CORRECTO: Confirmar compra con modal
+  // Confirmar compra con modal
   const confirmar = await modal.showConfirm(
     'Confirmar Compra',
     `¿Confirmas la compra del ${paquete.nombre}?
@@ -271,7 +266,6 @@ const comprarPlan = async (paquete: Paquete) => {
     console.log('✅ Paquete comprado exitosamente:', miPaqueteData)
 
     // PASO 4: Mostrar éxito con redirección automática
-    // ✅ CORRECTO: No necesitas router.push porque redirectTo lo hace
     await modal.showSuccess(
       '¡Compra Exitosa!',
       `Has adquirido el ${paquete.nombre}. Tienes ${paquete.num_clases} clases disponibles hasta el ${fechaVencimiento.toLocaleDateString('es-MX')}.`,
@@ -281,9 +275,6 @@ const comprarPlan = async (paquete: Paquete) => {
         redirectDelay: 1000
       }
     )
-    
-    // ⚠️ ELIMINAR ESTA LÍNEA - Ya no es necesaria
-    // router.push('/dashboard-cliente')
 
   } catch (err) {
     console.error('❌ Error en comprarPlan:', err)
@@ -295,7 +286,7 @@ const comprarPlan = async (paquete: Paquete) => {
   }
 }
 
-// ✅ CORRECTO: Ver información con await
+// Ver información
 const verInfo = async (paquete: Paquete) => {
   console.log('ℹ️ Ver info de:', paquete)
   
