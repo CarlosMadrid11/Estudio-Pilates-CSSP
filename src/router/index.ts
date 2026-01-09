@@ -103,10 +103,13 @@ const router = createRouter({
       meta: { requiresAuth: true, allowedRoles: ['instructor', 'admin'] }
     },
     {
-      path: '/crear-clases',
-      name: 'crear-clases',
-      component: CrearClasesView,
-      meta: { requiresAuth: true, allowedRoles: ['instructor', 'admin'] }
+    path: '/crear-clases',
+    name: 'crear-clases',
+    component: CrearClasesView,
+      meta: { 
+        requiresAuth: true,  // ✅ REQUIERE autenticación
+        allowedRoles: ['instructor', 'admin']  // ✅ Solo instructor y admin
+      }
     },
 
     // Admin
