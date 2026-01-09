@@ -6,6 +6,10 @@ Este proyecto demuestra arquitectura moderna de frontend, integración con BaaS 
 
 ---
 
+[![README](https://img.shields.io/badge/📖%20README-Principal-black)](./README.md)
+[![Documentación](https://img.shields.io/badge/📚%20Documentación-Adicional-blue)](./DOCUMENTACION.md)
+
+
 ## 🎯 Objetivo del proyecto
 
 Construir un sistema de gestión completo para estudios de Pilates que incluya:
