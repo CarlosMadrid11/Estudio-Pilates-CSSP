@@ -18,6 +18,7 @@ import MetodoPagoView from '@/views/cliente/MetodoPagoView.vue'
 // Instructor
 import CalendarioInstructorView from '@/views/instructor/CalendarioInstructorView.vue'
 import RegistroAsistenciaView from '@/views/instructor/RegistroAsistenciaView.vue'
+import CrearClasesView from '@/views/instructor/CrearClasesView.vue'
 
 // Admin
 import GestionClientesView from '@/views/admin/GestionClientesView.vue'
@@ -99,6 +100,12 @@ const router = createRouter({
       path: '/registro-asistencia',
       name: 'registro-asistencia',
       component: RegistroAsistenciaView,
+      meta: { requiresAuth: true, allowedRoles: ['instructor', 'admin'] }
+    },
+    {
+      path: '/crear-clases',
+      name: 'crear-clases',
+      component: CrearClasesView,
       meta: { requiresAuth: true, allowedRoles: ['instructor', 'admin'] }
     },
 
