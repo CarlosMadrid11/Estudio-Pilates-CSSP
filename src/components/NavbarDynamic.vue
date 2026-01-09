@@ -60,6 +60,10 @@
             <router-link to="/registro-asistencia" class="nav-link">
               Registro asistencia
             </router-link>
+
+            <router-link to="/crear-clases" class="nav-link">
+              Crear Clases
+            </router-link>
           </template>
 
         </div>
