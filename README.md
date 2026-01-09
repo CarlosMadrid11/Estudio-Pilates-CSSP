@@ -7,7 +7,7 @@ Este proyecto demuestra arquitectura moderna de frontend, integración con BaaS 
 ---
 
 [![README](https://img.shields.io/badge/📖%20README-Principal-black)](./README.md)
-[![Documentación](https://img.shields.io/badge/📚%20Documentación-Adicional-blue)](./DOCUMENTACION.md)
+[![Documentación](https://img.shields.io/badge/📚%20Documentación-Adicional-blue)](./Documentacion.md)
 
 
 ## 🎯 Objetivo del proyecto
