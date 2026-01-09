@@ -11,3 +11,4 @@ Aquí se encuentran todas las historias de usuario con criterios de aceptación:
 Prototipos, flujos y variaciones de pantallas:
 
 🔗 https://www.figma.com/board/azyX9xVZUtRWOPao6CoztX/Te-damos-la-bienvenida-a-FigJam?node-id=0-1&t=ezqotaIyU03mm9Nb-1
+ 
