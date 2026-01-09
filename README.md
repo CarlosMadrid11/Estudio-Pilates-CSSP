@@ -6,6 +6,7 @@ Este proyecto demuestra arquitectura moderna de frontend, integración con BaaS 
 
 ---
 
+El documento Documentacion.md reúne los recursos adicionales del proyecto, incluyendo la aplicación desplegada, documentación funcional y diseño UX/UI.
 [![README](https://img.shields.io/badge/📖%20README-Principal-black)](./README.md)
 [![Documentación](https://img.shields.io/badge/📚%20Documentación-Adicional-blue)](./Documentacion.md)
 
