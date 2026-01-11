@@ -22,7 +22,7 @@ import CrearClasesView from '@/views/instructor/CrearClasesView.vue'
 
 // Admin
 import GestionClientesView from '@/views/admin/GestionClientesView.vue'
-import ReportesVentasView from '@/views/admin/ReportesVentasView.vue'
+import CrearInstructorView from '@/views/admin/CrearInstructorView.vue'
 
 // Vista error 404
 import NotFoundView from '@/views/NotFoundView.vue'
@@ -120,9 +120,9 @@ const router = createRouter({
       meta: { requiresAuth: true, allowedRoles: ['admin'] }
     },
     {
-      path: '/reportes-ventas',
-      name: 'reportes-ventas',
-      component: ReportesVentasView,
+      path: '/crear-instructor',
+      name: 'crear-instructor',
+      component: CrearInstructorView,
       meta: { requiresAuth: true, allowedRoles: ['admin'] }
     },
     // Ruta para vista de error 404
