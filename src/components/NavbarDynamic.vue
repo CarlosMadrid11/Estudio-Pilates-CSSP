@@ -49,6 +49,9 @@
             <router-link to="/gestion-clientes" class="nav-link">
               Gestión de Clientes
             </router-link>
+            <router-link to="/crear-instructor" class="nav-link">
+              Crear Instructor
+            </router-link>
           </template>
 
           <!-- Links para INSTRUCTOR -->
