@@ -54,9 +54,20 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label>Contraseña *</label>
-              <div class="password-input-wrapper">
+            <div class="form-group password-section">
+              <div class="password-header">
+                <label>Contraseña Temporal</label>
+                <label class="checkbox-label">
+                  <input 
+                    v-model="generarAutomatica" 
+                    type="checkbox"
+                    class="checkbox"
+                  />
+                  <span>Generar automáticamente</span>
+                </label>
+              </div>
+
+              <div v-if="!generarAutomatica" class="password-input-wrapper">
                 <input 
                   v-model="formulario.password" 
                   :type="mostrarPassword ? 'text' : 'password'"
@@ -73,6 +84,10 @@
                 >
                   {{ mostrarPassword ? '👁️' : '👁️‍🗨️' }}
                 </button>
+              </div>
+              <div v-else class="auto-password-info">
+                <span class="info-icon">ℹ️</span>
+                <span>Se generará una contraseña segura automáticamente</span>
               </div>
               <p v-if="errores.password" class="error-message">{{ errores.password }}</p>
             </div>
@@ -171,6 +186,22 @@
               </div>
             </div>
 
+            <div class="password-box">
+              <div class="password-header-modal">
+                <span class="icon">🔑</span>
+                <span class="title">Contraseña Temporal</span>
+              </div>
+              <div class="password-value">
+                {{ instructorCreado.password }}
+              </div>
+              <button @click="copiarPassword" class="btn-copy">
+                {{ passwordCopiado ? '✅ Copiado' : '📋 Copiar' }}
+              </button>
+              <p class="password-note">
+                ⚠️ Guarda esta contraseña. El instructor deberá cambiarla en su primer inicio de sesión.
+              </p>
+            </div>
+
             <div class="modal-buttons">
               <button class="btn-primary-large" @click="cerrarModalExito">
                 Entendido
@@ -204,6 +235,7 @@ interface InstructorCreado {
   nombre: string
   email: string
   telefono: string
+  password: string
 }
 
 // ============================================
@@ -212,15 +244,18 @@ interface InstructorCreado {
 
 const creando = ref(false)
 const cargando = ref(false)
+const generarAutomatica = ref(true)
 const mostrarPassword = ref(false)
 const mostrarModalExito = ref(false)
+const passwordCopiado = ref(false)
 const busqueda = ref('')
 
 const instructores = ref<Instructor[]>([])
 const instructorCreado = ref<InstructorCreado>({
   nombre: '',
   email: '',
-  telefono: ''
+  telefono: '',
+  password: ''
 })
 
 const formulario = reactive({
@@ -283,13 +318,23 @@ const instructoresFiltrados = computed(() => {
 // METHODS
 // ============================================
 
+// Generar contraseña aleatoria
+const generarPasswordAleatoria = (): string => {
+  const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let password = ''
+  for (let i = 0; i < 10; i++) {
+    password += caracteres.charAt(Math.floor(Math.random() * caracteres.length))
+  }
+  return password
+}
+
 // Validar campo individual
 const validarCampo = (campo: keyof typeof errores) => {
   const data = {
     nombreCompleto: formulario.nombreCompleto.trim(),
     email: formulario.email.trim(),
     telefono: formulario.telefono.trim(),
-    password: formulario.password
+    password: generarAutomatica.value ? 'temp123' : formulario.password
   }
 
   try {
@@ -321,6 +366,7 @@ const limpiarFormulario = () => {
   formulario.email = ''
   formulario.telefono = ''
   formulario.password = ''
+  generarAutomatica.value = true
   limpiarErrores()
 }
 
@@ -389,11 +435,15 @@ const cargarInstructores = async () => {
 const crearInstructor = async () => {
   limpiarErrores()
   
+  const passwordTemporal = generarAutomatica.value 
+    ? generarPasswordAleatoria() 
+    : formulario.password
+  
   const data = {
     nombreCompleto: formulario.nombreCompleto.trim(),
     email: formulario.email.trim(),
     telefono: formulario.telefono.trim(),
-    password: formulario.password
+    password: passwordTemporal
   }
   
   // Validar
@@ -420,7 +470,7 @@ const crearInstructor = async () => {
     // PASO 1: Crear usuario en auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: validatedData.email,
-      password: validatedData.password,
+      password: passwordTemporal,
       options: {
         data: {
           nombre_completo: validatedData.nombreCompleto,
@@ -514,11 +564,13 @@ const crearInstructor = async () => {
     instructorCreado.value = {
       nombre: validatedData.nombreCompleto,
       email: validatedData.email,
-      telefono: validatedData.telefono
+      telefono: validatedData.telefono,
+      password: passwordTemporal
     }
     
     // Mostrar modal de éxito
     mostrarModalExito.value = true
+    passwordCopiado.value = false
     
     // Limpiar formulario
     limpiarFormulario()
@@ -532,6 +584,20 @@ const crearInstructor = async () => {
     alert(`Error al crear instructor:\n\n${errorMessage}`)
   } finally {
     creando.value = false
+  }
+}
+
+// Copiar contraseña
+const copiarPassword = async () => {
+  try {
+    await navigator.clipboard.writeText(instructorCreado.value.password)
+    passwordCopiado.value = true
+    setTimeout(() => {
+      passwordCopiado.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Error al copiar:', err)
+    alert('No se pudo copiar la contraseña')
   }
 }
 
@@ -559,6 +625,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Estilos base (similar a GestionClientesView) */
 .crear-instructor-view {
   width: 100%;
   min-height: 100vh;
@@ -602,6 +669,7 @@ h2 {
   color: #667eea;
 }
 
+/* Formulario */
 .form-section {
   display: flex;
   flex-direction: column;
@@ -657,6 +725,36 @@ h2 {
   margin-top: 5px;
 }
 
+/* Sección de contraseña */
+.password-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+}
+
+.password-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
 .password-input-wrapper {
   position: relative;
 }
@@ -678,6 +776,22 @@ h2 {
   opacity: 0.7;
 }
 
+.auto-password-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #e3f2fd;
+  border-radius: 8px;
+  color: #1976d2;
+  font-size: 14px;
+}
+
+.info-icon {
+  font-size: 18px;
+}
+
+/* Botones del formulario */
 .form-buttons {
   display: flex;
   gap: 15px;
@@ -723,6 +837,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Buscador */
 .search-bar {
   margin-bottom: 20px;
 }
@@ -742,6 +857,7 @@ button:disabled {
   border-color: #667eea;
 }
 
+/* Loading */
 .loading {
   text-align: center;
   padding: 40px;
@@ -767,6 +883,7 @@ button:disabled {
   color: #999;
 }
 
+/* Tabla */
 .table-header,
 .table-row {
   display: flex;
@@ -799,6 +916,7 @@ button:disabled {
   font-size: 14px;
 }
 
+/* Modal */
 .modal {
   display: flex;
   position: fixed;
@@ -903,6 +1021,61 @@ button:disabled {
   color: #333;
 }
 
+.password-box {
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.password-header-modal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #856404;
+}
+
+.password-value {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #333;
+  margin-bottom: 15px;
+  word-break: break-all;
+}
+
+.btn-copy {
+  width: 100%;
+  padding: 10px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn-copy:hover {
+  background: #218838;
+}
+
+.password-note {
+  margin-top: 15px;
+  font-size: 13px;
+  color: #856404;
+  text-align: left;
+}
+
 .modal-buttons {
   display: flex;
   justify-content: center;
@@ -925,6 +1098,7 @@ button:disabled {
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
+/* Responsive */
 @media (max-width: 768px) {
   .card {
     padding: 20px;
