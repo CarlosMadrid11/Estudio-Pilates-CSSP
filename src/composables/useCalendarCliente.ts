@@ -184,8 +184,62 @@ export function useCalendarCliente() {
   // ============================================
   
   const abrirModal = async (): Promise<void> => {
+    // CA01: Validar saldo antes de abrir modal
+    const tieneSaldo = await verificarSaldoDisponible()
+    
+    if (!tieneSaldo) {
+      alert('❌ No tienes clases disponibles en tu paquete.\n\nPor favor compra un paquete en la sección de Planes.')
+      router.push('/planes')
+      return
+    }
+    
     modalAbierto.value = true
     await cargarHorariosDisponibles(fechaSeleccionada.value)
+  }
+  
+  // CA01: Verificar saldo disponible
+  const verificarSaldoDisponible = async (): Promise<boolean> => {
+    try {
+      // Obtener cliente_id
+      const { data: clienteData, error: clienteError } = await supabase
+        .from('clientes')
+        .select('id')
+        .eq('profile_id', authStore.userId)
+        .single()
+
+      if (clienteError || !clienteData) {
+        console.error('❌ Error al obtener cliente:', clienteError)
+        return false
+      }
+
+      clienteId.value = clienteData.id
+
+      // Verificar paquete activo con clases
+      const hoy = obtenerFechaHoy()
+      
+      const { data: paqueteData, error: paqueteError } = await supabase
+        .from('mis_paquetes')
+        .select('id, clases_restantes, fecha_vencimiento')
+        .eq('cliente_id', clienteId.value)
+        .eq('activo', true)
+        .gt('clases_restantes', 0)
+        .gte('fecha_vencimiento', hoy)
+        .limit(1)
+        .maybeSingle()
+
+      if (paqueteError || !paqueteData) {
+        console.warn('⚠️ No hay paquete activo con saldo')
+        return false
+      }
+
+      paqueteActivoId.value = paqueteData.id
+      console.log('✅ Saldo verificado:', paqueteData.clases_restantes, 'clases')
+      return true
+
+    } catch (error) {
+      console.error('❌ Error al verificar saldo:', error)
+      return false
+    }
   }
 
   const cerrarModal = (): void => {
@@ -275,42 +329,24 @@ export function useCalendarCliente() {
       console.log('📅 Fecha seleccionada:', fechaSeleccionada.value)
       console.log('🕐 Hora seleccionada:', horaSeleccionada.value)
 
-      // PASO 1: Obtener cliente_id
-      const { data: clienteData, error: clienteError } = await supabase
-        .from('clientes')
-        .select('id')
-        .eq('profile_id', authStore.userId)
-        .single()
-
-      if (clienteError || !clienteData) {
-        throw new Error('No se encontró información del cliente')
+      // PASO 1: Verificar que ya tenemos el paquete activo (del verificarSaldoDisponible)
+      if (!paqueteActivoId.value) {
+        throw new Error('No se encontró paquete activo')
       }
 
-      clienteId.value = clienteData.id
-      console.log('✅ Cliente ID:', clienteId.value)
-
-      // PASO 2: Verificar paquete activo con clases
-      const hoy = obtenerFechaHoy()
-      
+      // PASO 2: Re-verificar saldo por seguridad
       const { data: paqueteData, error: paqueteError } = await supabase
         .from('mis_paquetes')
-        .select('id, clases_restantes, fecha_vencimiento')
-        .eq('cliente_id', clienteId.value)
+        .select('id, clases_restantes')
+        .eq('id', paqueteActivoId.value)
         .eq('activo', true)
         .gt('clases_restantes', 0)
-        .gte('fecha_vencimiento', hoy)
-        .order('fecha_vencimiento', { ascending: true })
-        .limit(1)
         .single()
 
       if (paqueteError || !paqueteData) {
-        console.warn('⚠️ No hay paquete activo:', paqueteError)
-        alert('❌ No tienes un paquete activo con clases disponibles.\n\nPor favor compra un paquete en la sección de Planes.')
-        router.push('/planes')
-        return
+        throw new Error('No tienes clases disponibles')
       }
 
-      paqueteActivoId.value = paqueteData.id
       console.log('✅ Paquete activo:', paqueteActivoId.value)
       console.log('📊 Clases restantes:', paqueteData.clases_restantes)
 
