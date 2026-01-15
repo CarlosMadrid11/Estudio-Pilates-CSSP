@@ -46,6 +46,18 @@ const obtenerFechaHoy = (): string => {
   return `${year}-${month}-${day}`
 }
 
+/**
+ * CA01: Obtiene fecha límite 2 meses en el futuro (último día del mes)
+ */
+const obtenerFechaLimite2Meses = (): string => {
+  const hoy = new Date()
+  const futuro = new Date(hoy.getFullYear(), hoy.getMonth() + 3, 0) // Último día del mes +2
+  const year = futuro.getFullYear()
+  const month = String(futuro.getMonth() + 1).padStart(2, '0')
+  const day = String(futuro.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // ============================================
 // COMPOSABLE PRINCIPAL
 // ============================================
@@ -101,11 +113,19 @@ export function useCalendarCliente() {
       return
     }
 
+    // CA01: Calcular límites de fecha
+    const fechaHoy = obtenerFechaHoy()
+    const fechaLimite = obtenerFechaLimite2Meses()
+
+    console.log('📅 Rango válido del calendario:')
+    console.log('  - Desde:', fechaHoy)
+    console.log('  - Hasta:', fechaLimite)
+
     const calendarOptions: CalendarOptions = {
       plugins: [dayGridPlugin, interactionPlugin],
       initialView: 'dayGridMonth',
       locale: esLocale,
-      timeZone: 'local',  // ✅ IMPORTANTE: Mantener timezone local
+      timeZone: 'local',
       
       headerToolbar: {
         left: 'prev,next today',
@@ -119,23 +139,34 @@ export function useCalendarCliente() {
       dayMaxEvents: true,
       weekends: true,
       
-      // ✅ CORRECCIÓN: Usar string directo sin conversión
+      // ✅ CA01: Limitar navegación temporal (mes actual hasta 2 meses adelante)
       validRange: {
-        start: obtenerFechaHoy()  // ← Función helper sin timezone
+        start: fechaHoy,
+        end: fechaLimite
       },
       
-      // Click en un día
+      // ✅ CA02: Agregar clases CSS a días pasados
+      dayCellClassNames: (arg): string[] => {
+        const fechaCelda = arg.date.toISOString().split('T')[0] // YYYY-MM-DD
+        
+        if (!compararFechas(fechaCelda, fechaHoy)) {
+          return ['fc-day-past'] // Ya está estilizado en tu CSS
+        }
+        return []
+      },
+      
+      // ✅ CA02: Click en un día (prevenir días pasados)
       dateClick: (info: DateClickArg): void => {
-        // ✅ CORRECCIÓN: Comparar strings directamente, sin Date()
-        const fechaClick = info.dateStr  // Ya viene como '2026-01-09'
+        const fechaClick = info.dateStr
         const hoy = obtenerFechaHoy()
         
         console.log('📅 Click en fecha:', fechaClick)
         console.log('📅 Hoy es:', hoy)
         console.log('📅 ¿Válida?:', compararFechas(fechaClick, hoy))
         
+        // Solo permitir fechas futuras o hoy
         if (compararFechas(fechaClick, hoy)) {
-          fechaSeleccionada.value = fechaClick  // ← String puro, sin conversión
+          fechaSeleccionada.value = fechaClick
           horaSeleccionada.value = ''
           abrirModal()
         } else {
@@ -193,7 +224,7 @@ export function useCalendarCliente() {
             )
           )
         `)
-        .eq('fecha', fecha)  // ← String directo, sin conversión
+        .eq('fecha', fecha)
         .order('hora_inicio', { ascending: true })
 
       if (clasesError) {
@@ -259,7 +290,6 @@ export function useCalendarCliente() {
       console.log('✅ Cliente ID:', clienteId.value)
 
       // PASO 2: Verificar paquete activo con clases
-      // ✅ CORRECCIÓN: Comparar fecha sin hora
       const hoy = obtenerFechaHoy()
       
       const { data: paqueteData, error: paqueteError } = await supabase
@@ -268,7 +298,7 @@ export function useCalendarCliente() {
         .eq('cliente_id', clienteId.value)
         .eq('activo', true)
         .gt('clases_restantes', 0)
-        .gte('fecha_vencimiento', hoy)  // ← String YYYY-MM-DD
+        .gte('fecha_vencimiento', hoy)
         .order('fecha_vencimiento', { ascending: true })
         .limit(1)
         .single()
@@ -317,7 +347,6 @@ export function useCalendarCliente() {
       }
 
       // PASO 6: Crear reserva
-      // ✅ CORRECCIÓN: fecha_reserva con timestamp correcto
       const ahora = new Date()
       const timestampReserva = ahora.toISOString()
       
@@ -333,7 +362,7 @@ export function useCalendarCliente() {
           cliente_id: clienteId.value,
           clase_id: claseId,
           mi_paquete_id: paqueteActivoId.value,
-          fecha_reserva: timestampReserva,  // ← Timestamp con hora
+          fecha_reserva: timestampReserva,
           estado: 'confirmada'
         })
 
