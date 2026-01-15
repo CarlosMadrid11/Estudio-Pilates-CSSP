@@ -26,7 +26,7 @@
         class="plan"
         :class="{ 'best-option': paquete.destacado }"
       >
-        <div v-if="paquete.destacado" class="badge">MEJOR OPCIÓN</div>
+        <div v-if="paquete.destacado" class="badge">MAS POPULAR</div>
         
         <h2>{{ paquete.nombre }}</h2>
         <p>{{ paquete.num_clases }} clases</p>
