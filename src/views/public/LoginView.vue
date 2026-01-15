@@ -36,7 +36,7 @@
           <button 
             @click="iniciarSesion" 
             class="btn"
-            :disabled="isLoading"
+            :disabled="isLoading || !isFormValid"
           >
             {{ isLoading ? 'Iniciando...' : 'Iniciar sesión' }}
           </button>
@@ -51,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
@@ -67,17 +67,28 @@ const errorMessage = ref('')
 const hasError = ref(false)
 const isLoading = ref(false)
 
+// Validación del formato de email
+const isEmailValid = computed(() => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email.value.trim())
+})
+
+// Validación completa del formulario (CA05)
+const isFormValid = computed(() => {
+  return email.value.trim() !== '' && 
+         password.value.trim() !== '' && 
+         isEmailValid.value
+})
+
 const iniciarSesion = async () => {
+  // Verificar validación antes de proceder
+  if (!isFormValid.value) {
+    return
+  }
+
   // Limpiar errores previos
   errorMessage.value = ''
   hasError.value = false
-
-  // Validar campos vacíos
-  if (!email.value.trim() || !password.value.trim()) {
-    errorMessage.value = 'Por favor completa todos los campos'
-    hasError.value = true
-    return
-  }
 
   isLoading.value = true
 
