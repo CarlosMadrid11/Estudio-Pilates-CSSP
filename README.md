@@ -84,17 +84,16 @@ FASE 4: ████████████████████ 100% ✅ CO
   ✓ MisReservasView mejorada (tabs + historial)
   ✓ Bug timezone RESUELTO
 
-FASE 5: ░░░░░░░░░░░░░░░░░░░░ 0% ⏳ PRÓXIMA FASE
-  ⏳ Página 404 personalizada
-  ⏳ Panel de usuario en navbar
-  ⏳ Vista "Mi Cuenta"
-  ⏳ Notificaciones visuales
-  ⏳ Vista Crear Clase (Instructor)
+FASE 5: ████████████████████ 100% ✅ COMPLETADA
+  ✓ Página 404 personalizada
+  ✓ Panel de usuario en navbar
+  ✓ Vista Crear Clase (Instructor)
+  ✓ Correlacion con los criterios de aceptacion de la historia de usuario ✅
 
-TOTAL:  ███████████████████░ 95% del proyecto
+TOTAL: ████████████████████ 100% ✅ COMPLETADO
 ```
 
-**Última actualización:** 5 de Enero, 2026
+**Última actualización:** 15 de Enero, 2026
 
 ---
 
@@ -108,18 +107,21 @@ src/
 ├── components/          # Componentes reutilizables
 │   ├── NavbarDynamic.vue
 │   └── Footer.vue
+│   └── Modal.vue
 ├── composables/         # Lógica reutilizable (Composition API)
-│   ├── useMisReservas.ts
+│   ├── useCalendar.ts
 │   ├── useCalendarCliente.ts
 │   ├── useCalendarioInstructor.ts
-│   ├── useRegistroAsistencia.ts
 │   └── useGestionClientes.ts
+│   └── useModal.ts
+│   ├── useRegistroAsistencia.ts
 ├── lib/                 # Configuraciones externas
 │   └── supabase.ts     # Cliente de Supabase
 ├── stores/              # Estado global (Pinia)
 │   └── auth.ts         # Store de autenticación
 ├── views/               # Vistas organizadas por rol
 │   ├── public/         # Vistas públicas (guest)
+│   │   └── AyudaView.vue
 │   │   ├── LandingPageView.vue
 │   │   ├── PlanesView.vue
 │   │   ├── LoginView.vue
@@ -130,8 +132,10 @@ src/
 │   │   └── CalendarioClienteView.vue
 │   ├── instructor/     # Vistas de instructor
 │   │   ├── CalendarioInstructorView.vue
+│   │   ├── CrearClasesView.vue
 │   │   └── RegistroAsistenciaView.vue
 │   └── admin/          # Vistas de administrador
+│       └── CrearInstructorView.vue
 │       └── GestionClientesView.vue
 ├── router/
 │   └── index.ts        # Configuración de rutas + guards
@@ -189,13 +193,13 @@ interface AuthState {
 ### Jerarquía de roles
 
 ```
-guest → Solo vistas públicas (landing, planes, login)
+guest → Solo vistas públicas (landing, planes, login, ayuda, registrarse)
   ↓
-cliente → Vistas de cliente (dashboard, reservas, calendario)
+cliente → Vistas de cliente (dashboard, reservas, calendario, planes)
   ↓
-instructor → Vistas de instructor (calendario, asistencias)
+instructor → Vistas de instructor (calendario, asistencias, crear clases)
   ↓
-admin → Acceso total (gestión, reportes, configuración)
+admin → Acceso total (gestión, crear instructor)
 ```
 
 ### Protección de rutas
@@ -221,6 +225,8 @@ router.beforeEach((to, from, next) => {
   next()
 })
 ```
+
+### Cualquier ruta no encontrada, editada, o no disponible los dirige a una pagina 404.
 
 ---
 
@@ -568,6 +574,13 @@ WITH CHECK (
 - Resumen de asistencias por clase
 - Solo últimas 20 clases con reservas
 
+#### 3. Crar clases
+- Visualización de las **últimas 20 clases que tienen reservas**
+- Listado de alumnos por clase
+- Registro de asistencia individual (asistió / faltó)
+- Guardado automático de los cambios en tiempo real
+- Resumen de asistencia por cada clase
+
 ---
 
 ### ✅ Rol: Admin
@@ -581,6 +594,14 @@ WITH CHECK (
   - Paquetes activos e inactivos
   - Últimas 10 reservas con asistencia
 - Estadísticas en tiempo real
+
+#### 2. Gestion clientes
+- Visualización de la **lista completa de clientes**
+- Buscador dinámico por **nombre, email o teléfono**
+- Filtros por estado de paquetes (con paquetes / sin paquetes)
+- Acceso a un **modal con información detallada del cliente**
+- Estadísticas generales visibles en tiempo real
+- Interfaz visual diferenciada para el rol administrador
 
 ---
 
@@ -654,24 +675,22 @@ const date = new Date(year, month - 1, day)
 ```
 main      → Estable (producción)
 develop   → Integración (desarrollo)
-feature/* → Nuevas funcionalidades
+testing/  → Testear nuevos features
 fix/*     → Correcciones de bugs
 ```
 
 ### Convención de commits (Conventional Commits)
 ```
-feat: nueva funcionalidad
+testing: Testing y deteccion de errores
 fix: corrección de bug
-refactor: refactorización
-docs: documentación
-chore: tareas de mantenimiento
+develop: desarrollo de funcionalidades
 ```
 
 **Ejemplo:**
 ```bash
-git commit -m "feat: agregar tabs en MisReservasView"
+git commit -m "develop: agregar tabs en MisReservasView"
 git commit -m "fix: corregir timezone en calendario"
-git commit -m "docs: actualizar README con triggers"
+git commit -m "fix: actualizar README con triggers que eran inconsistentes"
 ```
 
 ---
@@ -718,20 +737,5 @@ Código privado - No apto para uso comercial sin autorización.
 
 ---
 
-## 🚀 Roadmap
-
-### Fase 5 - Mejoras finales (próxima fase)
-- [ ] Página 404 personalizada
-- [ ] Panel de usuario en navbar (dropdown)
-- [ ] Vista "Mi Cuenta" (editar perfil)
-- [ ] Notificaciones visuales (reemplazar alerts)
-- [ ] Vista para que instructor cree clases
-- [ ] Testing completo
-
-### Futuras mejoras (post-MVP)
-- [ ] Notificaciones por email (Supabase Edge Functions)
-
----
-
-**Última actualización:** 5 de Enero, 2026  
-**Estado:** 95% completado | Fase 4 ✅ | Listo para Fase 5 
+**Última actualización:** 15 de Enero, 2026  
+**Estado:** Completado
