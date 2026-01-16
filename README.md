@@ -120,6 +120,7 @@ src/
 ├── stores/              # Estado global (Pinia)
 │   └── auth.ts         # Store de autenticación
 ├── views/               # Vistas organizadas por rol
+│   │   ├── NotFoundView.vue
 │   ├── public/         # Vistas públicas (guest)
 │   │   └── AyudaView.vue
 │   │   ├── LandingPageView.vue
