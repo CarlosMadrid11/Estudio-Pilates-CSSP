@@ -226,6 +226,22 @@ export function useCalendarioInstructor() {
 
     const eventos = await cargarClases()
 
+    // CA04 y CA06: Configurar rango válido del calendario
+    const hoy = new Date()
+    const tresMesesFuturo = new Date()
+    tresMesesFuturo.setMonth(hoy.getMonth() + 3)
+    
+    const tresMesesPasado = new Date()
+    tresMesesPasado.setMonth(hoy.getMonth() - 3)
+    
+    // Formatar fechas para validRange
+    const formatearFechaRango = (fecha: Date): string => {
+      const year = fecha.getFullYear()
+      const month = String(fecha.getMonth() + 1).padStart(2, '0')
+      const day = String(fecha.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
     const calendarOptions: CalendarOptions = {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
       initialView: 'dayGridMonth',
@@ -236,6 +252,13 @@ export function useCalendarioInstructor() {
         left: 'prev,next today',
         center: 'title',
         right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      
+      // CA04: Limitar navegación a 3 meses hacia atrás (historial)
+      // CA06: Limitar navegación a 3 meses en el futuro
+      validRange: {
+        start: formatearFechaRango(tresMesesPasado),
+        end: formatearFechaRango(tresMesesFuturo)
       },
       
       slotMinTime: '06:00:00',
