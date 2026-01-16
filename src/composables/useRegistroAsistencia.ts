@@ -108,7 +108,7 @@ export function useRegistroAsistencia() {
       // Fecha de hoy
       const hoy = new Date().toISOString().split('T')[0]
 
-      // Obtener clases pasadas con reservas confirmadas
+      // CA01: Obtener últimas 20 clases pasadas, ordenadas de más antigua a más reciente
       const { data: clasesData, error: clasesError } = await supabase
         .from('clases')
         .select(`
@@ -131,9 +131,9 @@ export function useRegistroAsistencia() {
         `)
         .eq('instructor_id', idInstructor)
         .lt('fecha', hoy)
-        .order('fecha', { ascending: false })
-        .order('hora_inicio', { ascending: false })
-        .limit(20)
+        .order('fecha', { ascending: true })  // CA01: De más antigua a más reciente
+        .order('hora_inicio', { ascending: true })
+        .limit(20)  // CA01: Máximo 20 clases
 
       if (clasesError) {
         console.error('❌ Error al obtener clases:', clasesError)
@@ -200,41 +200,25 @@ export function useRegistroAsistencia() {
   }
 
   // ============================================
-  // MARCAR ASISTENCIA
+  // MARCAR ASISTENCIA (SOLO LOCAL)
   // ============================================
 
-  const marcarAsistencia = async (reservaId: string, asistio: boolean): Promise<void> => {
+  const marcarAsistencia = (reservaId: string, asistio: boolean): void => {
     if (!claseSeleccionada.value) return
 
-    try {
-      console.log(`📝 Marcando asistencia: ${reservaId} = ${asistio}`)
+    console.log(`📝 Marcando asistencia localmente: ${reservaId} = ${asistio}`)
 
-      const { error } = await supabase
-        .from('mis_reservas')
-        .update({ asistio })
-        .eq('id', reservaId)
-
-      if (error) {
-        console.error('❌ Error al marcar asistencia:', error)
-        throw error
-      }
-
-      // Actualizar localmente
-      const reserva = claseSeleccionada.value.reservas.find(r => r.id === reservaId)
-      if (reserva) {
-        reserva.asistio = asistio
-      }
-
-      console.log('✅ Asistencia marcada correctamente')
-
-    } catch (error) {
-      console.error('❌ Error:', error)
-      alert('❌ Error al marcar la asistencia')
+    // CA04: Solo actualizar localmente, NO guardar en BD aún
+    const reserva = claseSeleccionada.value.reservas.find(r => r.id === reservaId)
+    if (reserva) {
+      reserva.asistio = asistio
     }
+
+    console.log('✅ Asistencia marcada localmente')
   }
 
   // ============================================
-  // GUARDAR TODAS LAS ASISTENCIAS
+  // GUARDAR TODAS LAS ASISTENCIAS (MASIVO)
   // ============================================
 
   const guardarTodasAsistencias = async (): Promise<void> => {
@@ -246,9 +230,35 @@ export function useRegistroAsistencia() {
     guardando.value = true
 
     try {
-      console.log('💾 Guardando todas las asistencias...')
+      console.log('💾 Guardando todas las asistencias de forma masiva...')
 
-      // Ya están guardadas individualmente, solo confirmamos
+      // CA04: Guardar todas las asistencias de forma masiva
+      const updates = claseSeleccionada.value.reservas.map(reserva => ({
+        id: reserva.id,
+        asistio: reserva.asistio
+      }))
+
+      console.log('📤 Actualizaciones a enviar:', updates)
+
+      // Realizar actualizaciones en paralelo para mejor rendimiento
+      const updatePromises = updates.map(update =>
+        supabase
+          .from('mis_reservas')
+          .update({ asistio: update.asistio })
+          .eq('id', update.id)
+      )
+
+      const results = await Promise.all(updatePromises)
+
+      // Verificar si hubo errores
+      const errors = results.filter(r => r.error)
+      if (errors.length > 0) {
+        console.error('❌ Errores al guardar:', errors)
+        throw new Error('Error al guardar algunas asistencias')
+      }
+
+      console.log('✅ Todas las asistencias guardadas exitosamente')
+
       alert(
         `✅ Asistencias guardadas correctamente!\n\n` +
         `✅ Asistencias: ${totalAsistencias.value}\n` +
@@ -256,13 +266,14 @@ export function useRegistroAsistencia() {
         `Total: ${claseSeleccionada.value.reservas.length}`
       )
 
-      // Recargar clases
+      // Recargar clases para reflejar cambios
       await cargarClasesPasadas()
       cerrarDetalles()
 
     } catch (error) {
       console.error('❌ Error:', error)
-      alert('❌ Error al guardar las asistencias')
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      alert(`❌ Error al guardar las asistencias: ${errorMessage}`)
     } finally {
       guardando.value = false
     }
