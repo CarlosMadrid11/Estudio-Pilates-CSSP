@@ -1,6 +1,7 @@
 # 📚 Documentación complementaria del proyecto CSSP
 
 Este documento reúne los recursos adicionales del proyecto, incluyendo la aplicación desplegada, documentación funcional y diseño UX/UI.
+📄 [Ver documentación completa (PDF)](docs/especificacion-tecnica-funcional-cssp.pdf)
 
 ---
 
